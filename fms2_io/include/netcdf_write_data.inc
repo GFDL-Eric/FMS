@@ -249,7 +249,7 @@ subroutine netcdf_write_data_2d(fileobj, variable_name, variable_data, unlim_dim
         if (tlen .gt. dimsizes(1)) then
           call error("character buffer is too big; decrease length.")
         endif
-        if (size(variable_data) .ne. dimsizes(2)) then
+        if (size(variable_data, 2) .ne. dimsizes(2)) then
           call error("incorrect size of variable_data array.")
         endif
         do j = 1, dimsizes(2)
