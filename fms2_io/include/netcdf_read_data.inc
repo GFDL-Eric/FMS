@@ -349,8 +349,8 @@ subroutine netcdf_read_data_2d(fileobj, variable_name, buf, unlim_dim_level, &
         call mpp_broadcast(buf, size(buf), fileobj%io_root, pelist=fileobj%pelist)
       type is (real(kind=real64))
         call mpp_broadcast(buf, size(buf), fileobj%io_root, pelist=fileobj%pelist)
-      type is (character(len=*))
-        call mpp_broadcast(buf, size(buf), fileobj%io_root, pelist=fileobj%pelist)
+!      type is (character(len=*))
+!        call mpp_broadcast(buf, size(buf), fileobj%io_root, pelist=fileobj%pelist)
       class default
         call error("unsupported type.")
     end select

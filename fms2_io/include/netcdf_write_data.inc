@@ -253,9 +253,9 @@ subroutine netcdf_write_data_2d(fileobj, variable_name, variable_data, unlim_dim
           call error("incorrect size of variable_data array.")
         endif
         do j = 1, dimsizes(2)
-          call string_copy(sbuf, variable_data(:,j))
+!          call string_copy(sbuf(1:tlen), variable_data(:,j))
           do i = 1, tlen
-            charbuf(i,j) = sbuf(i:i)
+            charbuf(i,j) = variable_data(i,j)
           enddo
         enddo
         err = nf90_put_var(fileobj%ncid, varid, charbuf, start=start, count=dimsizes)
