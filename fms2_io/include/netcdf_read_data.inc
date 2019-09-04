@@ -263,6 +263,13 @@ subroutine netcdf_read_data_2d(fileobj, variable_name, buf, unlim_dim_level, &
   integer :: unlim_dim_index
   integer, dimension(3) :: c
   integer, dimension(3) :: e
+  integer :: ndims
+  integer, dimension(2) :: start
+  integer, dimension(2) :: dimsizes
+  character, dimension(:,:), allocatable :: charbuf
+  character(len=1024) :: sbuf
+  integer :: i
+  integer :: j
 
   if (present(broadcast)) then
     bcast = broadcast
@@ -298,6 +305,35 @@ subroutine netcdf_read_data_2d(fileobj, variable_name, buf, unlim_dim_level, &
         err = nf90_get_var(fileobj%ncid, varid, buf, start=c, count=e)
       type is (real(kind=real64))
         err = nf90_get_var(fileobj%ncid, varid, buf, start=c, count=e)
+      type is (character(len=*))
+        ndims = get_variable_num_dimensions(fileobj, variable_name, broadcast=.false.)
+        if (ndims .ne. 2) then
+          call error(trim(variable_name)//"must be 2d dimensional in netcdf file.")
+        endif
+        start(1) = 1
+        start(2) = c(1)
+        call get_variable_size(fileobj, variable_name, dimsizes, .false.)
+        dimsizes(2) = dimsizes(2) - start(2) + 1
+        call allocate_array(charbuf, dimsizes)
+        charbuf(:,:) = ""
+        err = nf90_get_var(fileobj%ncid, varid, charbuf, start=start, count=dimsizes)
+        if (len(buf(1)) .lt. dimsizes(1)) then
+          call error("character buffer is too small; increase length.")
+        endif
+        if (size(buf) .lt. dimsizes(2)) then
+          call error("incorrect buffer array size.")
+        endif
+        do i = start(2), start(2)+dimsizes(2)-1
+          sbuf = ""
+          do j = 1, dimsizes(1)
+            if (charbuf(j, i-start(2)+1) .eq. char(0)) then
+              exit
+            endif
+            sbuf(j:j) = charbuf(j, i-start(2)+1)
+          enddo
+          call string_copy(buf(i-start(2)+1), sbuf)
+        enddo
+        deallocate(charbuf)
       class default
         call error("unsupported type.")
     end select
@@ -313,6 +349,8 @@ subroutine netcdf_read_data_2d(fileobj, variable_name, buf, unlim_dim_level, &
         call mpp_broadcast(buf, size(buf), fileobj%io_root, pelist=fileobj%pelist)
       type is (real(kind=real64))
         call mpp_broadcast(buf, size(buf), fileobj%io_root, pelist=fileobj%pelist)
+      type is (character(len=*))
+        call mpp_broadcast(buf, len(buf(1)), fileobj%io_root, pelist=fileobj%pelist)
       class default
         call error("unsupported type.")
     end select

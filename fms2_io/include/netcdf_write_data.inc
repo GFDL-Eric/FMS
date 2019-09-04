@@ -195,6 +195,14 @@ subroutine netcdf_write_data_2d(fileobj, variable_name, variable_data, unlim_dim
   integer :: unlim_dim_index
   integer,dimension(3) :: c
   integer, dimension(3) :: e
+  integer :: ndims
+  integer, dimension(:), allocatable :: start
+  integer, dimension(:), allocatable :: dimsizes
+  character, dimension(:,:), allocatable :: charbuf
+  character(len=1024) :: sbuf
+  integer :: i
+  integer :: j
+  integer :: tlen
 
   if (fileobj%is_root) then
     c(:) = 1
@@ -226,6 +234,34 @@ subroutine netcdf_write_data_2d(fileobj, variable_name, variable_data, unlim_dim
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c, count=e)
       type is (real(kind=real64))
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c ,count=e)
+      type is (character(len=*))
+        ndims = get_variable_num_dimensions(fileobj, variable_name, broadcast=.false.)
+        if (ndims .ne. 2) then
+          call error("currently only scalar and 1d character writes are supported.")
+        endif
+        allocate(start(ndims))
+        start(:) = 1
+        allocate(dimsizes(ndims))
+        call get_variable_size(fileobj, variable_name, dimsizes, .false.)
+        call allocate_array(charbuf, dimsizes)
+        charbuf(:,:) = ""
+        tlen = len(variable_data(1))
+        if (tlen .gt. dimsizes(1)) then
+          call error("character buffer is too big; decrease length.")
+        endif
+        if (size(variable_data) .ne. dimsizes(2)) then
+          call error("incorrect size of variable_data array.")
+        endif
+        do j = 1, dimsizes(2)
+          call string_copy(sbuf, variable_data(j))
+          do i = 1, tlen
+            charbuf(i,j) = sbuf(i:i)
+          enddo
+        enddo
+        err = nf90_put_var(fileobj%ncid, varid, charbuf, start=start, count=dimsizes)
+        deallocate(charbuf)
+        deallocate(dimsizes)
+        deallocate(start)
       class default
         call error("unsupported type.")
     end select
