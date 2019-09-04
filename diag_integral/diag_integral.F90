@@ -433,7 +433,7 @@ real,dimension(:,:), intent(in), optional :: blon, blat, area_in
           file_name = ensemble_file_name(file_name)
         endif
         nc = len_trim(file_name)
-        diag_unit = open_file (file_name(1:nc), action='write')
+        diag_unit = open_file(file_name(1:nc), action='write')
       endif
 
 !-------------------------------------------------------------------------------
