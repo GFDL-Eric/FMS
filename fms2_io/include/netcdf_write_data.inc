@@ -245,7 +245,7 @@ subroutine netcdf_write_data_2d(fileobj, variable_name, variable_data, unlim_dim
         call get_variable_size(fileobj, variable_name, dimsizes, .false.)
         call allocate_array(charbuf, dimsizes)
         charbuf(:,:) = ""
-        tlen = len(variable_data(1))
+        tlen = size(variable_data, 1)
         if (tlen .gt. dimsizes(1)) then
           call error("character buffer is too big; decrease length.")
         endif
@@ -253,7 +253,7 @@ subroutine netcdf_write_data_2d(fileobj, variable_name, variable_data, unlim_dim
           call error("incorrect size of variable_data array.")
         endif
         do j = 1, dimsizes(2)
-          call string_copy(sbuf, variable_data(j))
+          call string_copy(sbuf, variable_data(j,:))
           do i = 1, tlen
             charbuf(i,j) = sbuf(i:i)
           enddo
