@@ -306,10 +306,10 @@ subroutine netcdf_read_data_2d(fileobj, variable_name, buf, unlim_dim_level, &
       type is (real(kind=real64))
         err = nf90_get_var(fileobj%ncid, varid, buf, start=c, count=e)
       type is (character(len=*))
-        ndims = get_variable_num_dimensions(fileobj, variable_name, broadcast=.false.)
-        if (ndims .ne. 2) then
-          call error(trim(variable_name)//"must be 2d dimensional in netcdf file.")
-        endif
+!        ndims = get_variable_num_dimensions(fileobj, variable_name, broadcast=.false.)
+!        if (ndims .ne. 2) then
+!          call error(trim(variable_name)//"must be 2d dimensional in netcdf file.")
+!        endif
         start(1) = 1
         start(2) = c(1)
         call get_variable_size(fileobj, variable_name, dimsizes, .false.)
