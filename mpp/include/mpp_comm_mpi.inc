@@ -449,6 +449,43 @@ end subroutine mpp_gsm_free
       return
     end subroutine mpp_broadcast_char
 
+    subroutine mpp_broadcast_char2d(data, length, from_pe, pelist )
+      character(len=*), intent(inout) :: data(:,:)
+      integer, intent(in) :: length, from_pe
+      integer, intent(in), optional :: pelist(:)
+      integer :: n, i, from_rank, out_unit
+      character    :: str1D(length)
+      pointer(lptr, str1D)
+
+      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'mpp_broadcast_text: You must first call mpp_init.' )
+      n = get_peset(pelist); if( peset(n)%count.EQ.1 )return
+
+
+      if( debug )then
+          call SYSTEM_CLOCK(tick)
+          if(mpp_pe() == mpp_root_pe()) then
+            write( stdout_unit,'(a,i18,a,i5,a,2i5,2i8)' )&
+               'T=',tick, ' PE=',pe, 'mpp_broadcast_text begin: from_pe, length=', from_pe, length
+          endif
+      end if
+
+      if( .NOT.ANY(from_pe.EQ.peset(current_peset_num)%list) ) &
+           call mpp_error( FATAL, 'mpp_broadcast_text: broadcasting from invalid PE.' )
+
+      if( debug .and. (current_clock.NE.0) )call SYSTEM_CLOCK(start_tick)
+ ! find the rank of from_pe in the pelist.     
+      do i = 1, mpp_npes()
+         if(peset(n)%list(i) == from_pe) then
+             from_rank = i - 1
+             exit
+         endif
+      enddo
+      lptr = LOC (data)
+      if( mpp_npes().GT.1 ) call MPI_BCAST( data, length, MPI_CHARACTER, from_rank, peset(n)%id, error )
+      if( debug .and. (current_clock.NE.0) )call increment_current_clock( EVENT_BROADCAST, length )
+      return
+    end subroutine mpp_broadcast_char2d
+
 #undef MPP_TRANSMIT_
 #define MPP_TRANSMIT_ mpp_transmit_real8
 #undef MPP_TRANSMIT_SCALAR_

@@ -1123,6 +1123,7 @@ private
   ! </INTERFACE>
   interface mpp_broadcast
      module procedure mpp_broadcast_char
+     module procedure mpp_broadcast_char2d
      module procedure mpp_broadcast_real8
      module procedure mpp_broadcast_real8_scalar
      module procedure mpp_broadcast_real8_2d

@@ -335,7 +335,8 @@ subroutine netcdf_read_data_2d(fileobj, variable_name, buf, unlim_dim_level, &
         enddo
         deallocate(charbuf)
       class default
-        call error("unsupported type.")
+        charbuf(:,:) = ""
+!        call error("unsupported type.")
     end select
     call check_netcdf_code(err)
   endif
