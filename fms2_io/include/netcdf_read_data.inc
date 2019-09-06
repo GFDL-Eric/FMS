@@ -317,10 +317,10 @@ subroutine netcdf_read_data_2d(fileobj, variable_name, buf, unlim_dim_level, &
         call allocate_array(charbuf, dimsizes)
         charbuf(:,:) = ""
         err = nf90_get_var(fileobj%ncid, varid, charbuf, start=start, count=dimsizes)
-        if (size(buf, 1) .lt. dimsizes(1)) then
+        if (size(charbuf, 1) .lt. dimsizes(1)) then
           call error("character buffer is too small; increase length.")
         endif
-        if (size(buf, 2) .lt. dimsizes(2)) then
+        if (size(charbuf, 2) .lt. dimsizes(2)) then
           call error("incorrect buffer array size.")
         endif
         do i = start(2), start(2)+dimsizes(2)-1
