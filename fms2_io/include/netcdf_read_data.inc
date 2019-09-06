@@ -266,10 +266,10 @@ subroutine netcdf_read_data_2d(fileobj, variable_name, buf, unlim_dim_level, &
   integer :: ndims
   integer, dimension(2) :: start
   integer, dimension(2) :: dimsizes
-  character, dimension(:,:), allocatable :: charbuf
-  character(len=1024) :: sbuf
-  integer :: i
-  integer :: j
+!  character, dimension(:,:), allocatable :: charbuf
+!  character(len=1024) :: sbuf
+!  integer :: i
+!  integer :: j
 
   if (present(broadcast)) then
     bcast = broadcast
@@ -314,28 +314,28 @@ subroutine netcdf_read_data_2d(fileobj, variable_name, buf, unlim_dim_level, &
         start(2) = c(1)
         call get_variable_size(fileobj, variable_name, dimsizes, .false.)
         dimsizes(2) = dimsizes(2) - start(2) + 1
-        call allocate_array(charbuf, dimsizes)
-        charbuf(:,:) = ""
-        err = nf90_get_var(fileobj%ncid, varid, charbuf, start=start, count=dimsizes)
-        if (size(charbuf, 1) .lt. dimsizes(1)) then
+        call allocate_array(buf, dimsizes)
+        buf(:,:) = ""
+        err = nf90_get_var(fileobj%ncid, varid, buf, start=start, count=dimsizes)
+        if (size(buf, 1) .lt. dimsizes(1)) then
           call error("character buffer is too small; increase length.")
         endif
-        if (size(charbuf, 2) .lt. dimsizes(2)) then
+        if (size(buf, 2) .lt. dimsizes(2)) then
           call error("incorrect buffer array size.")
         endif
-        do i = start(2), start(2)+dimsizes(2)-1
-          sbuf = ""
-          do j = 1, dimsizes(1)
-            if (charbuf(j, i-start(2)+1) .eq. char(0)) then
-              exit
-            endif
-            sbuf(j:j) = charbuf(j, i-start(2)+1)
-          enddo
-          call string_copy(buf(i-start(2)+1,i), sbuf)
-        enddo
-        deallocate(charbuf)
+!        do i = start(2), start(2)+dimsizes(2)-1
+!          sbuf = ""
+!          do j = 1, dimsizes(1)
+!            if (charbuf(j, i-start(2)+1) .eq. char(0)) then
+!              exit
+!            endif
+!            sbuf(j:j) = charbuf(j, i-start(2)+1)
+!          enddo
+!          call string_copy(buf(i-start(2)+1,i), sbuf)
+!        enddo
+!        deallocate(charbuf)
       class default
-        charbuf(:,:) = ""
+        start(1) = 1
 !        call error("unsupported type.")
     end select
     call check_netcdf_code(err)
