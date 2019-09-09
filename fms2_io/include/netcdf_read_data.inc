@@ -325,14 +325,15 @@ subroutine netcdf_read_data_2d(fileobj, variable_name, buf, unlim_dim_level, &
         endif
         do i = start(2), start(2)+dimsizes(2)-1
           sbuf = ""
-!          do j = 1, dimsizes(1)
+          do j = 1, dimsizes(1)
+            buf(j,i) = charbuf(j,i)
 !            if (charbuf(j, i-start(2)+1) .eq. char(0)) then
 !              exit
 !            endif
 !            sbuf(j:j) = charbuf(j, i-start(2)+1)
-!          enddo
-          sbuf(1:dimsizes(1)) = charbuf(1:dimsizes(1), i-start(2)+1)
-          buf(1:dimsizes(1),i-start(2)+1) = sbuf(1:dimsizes(1))
+          enddo
+!          sbuf(1:dimsizes(1)) = charbuf(1:dimsizes(1), i-start(2)+1)
+!          buf(i-start(2)+1)(1:dimsizes(1)) = sbuf(1:dimsizes(1))
         enddo
 !        buf = charbuf
         deallocate(charbuf)
