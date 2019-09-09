@@ -306,37 +306,38 @@ subroutine netcdf_read_data_2d(fileobj, variable_name, buf, unlim_dim_level, &
       type is (real(kind=real64))
         err = nf90_get_var(fileobj%ncid, varid, buf, start=c, count=e)
       type is (character(len=*))
-!        ndims = get_variable_num_dimensions(fileobj, variable_name, broadcast=.false.)
-!        if (ndims .ne. 2) then
-!          call error(trim(variable_name)//"must be 2d dimensional in netcdf file.")
+        err = nf90_get_var(fileobj%ncid, varid, buf, start=c, count=e)
+!!        ndims = get_variable_num_dimensions(fileobj, variable_name, broadcast=.false.)
+!!        if (ndims .ne. 2) then
+!!          call error(trim(variable_name)//"must be 2d dimensional in netcdf file.")
+!!        endif
+!        start(1) = 1
+!        start(2) = c(1)
+!        call get_variable_size(fileobj, variable_name, dimsizes, .false.)
+!        dimsizes(2) = dimsizes(2) - start(2) + 1
+!        call allocate_array(charbuf, dimsizes)
+!        charbuf(:,:) = ""
+!        err = nf90_get_var(fileobj%ncid, varid, charbuf, start=start, count=dimsizes)
+!        if (size(charbuf, 1) .lt. dimsizes(1)) then
+!          call error("character buffer is too small; increase length.")
 !        endif
-        start(1) = 1
-        start(2) = c(1)
-        call get_variable_size(fileobj, variable_name, dimsizes, .false.)
-        dimsizes(2) = dimsizes(2) - start(2) + 1
-        call allocate_array(charbuf, dimsizes)
-        charbuf(:,:) = ""
-        err = nf90_get_var(fileobj%ncid, varid, charbuf, start=start, count=dimsizes)
-        if (size(charbuf, 1) .lt. dimsizes(1)) then
-          call error("character buffer is too small; increase length.")
-        endif
-        if (size(charbuf, 2) .lt. dimsizes(2)) then
-          call error("incorrect buffer array size.")
-        endif
-        do i = start(2), start(2)+dimsizes(2)-1
-          sbuf = ""
-          do j = 1, dimsizes(1)
-            buf(j,i) = charbuf(j,i)
-!            if (charbuf(j, i-start(2)+1) .eq. char(0)) then
-!              exit
-!            endif
-!            sbuf(j:j) = charbuf(j, i-start(2)+1)
-          enddo
-!          sbuf(1:dimsizes(1)) = charbuf(1:dimsizes(1), i-start(2)+1)
-!          buf(i-start(2)+1)(1:dimsizes(1)) = sbuf(1:dimsizes(1))
-        enddo
-!        buf = charbuf
-        deallocate(charbuf)
+!        if (size(charbuf, 2) .lt. dimsizes(2)) then
+!          call error("incorrect buffer array size.")
+!        endif
+!        do i = start(2), start(2)+dimsizes(2)-1
+!          sbuf = ""
+!          do j = 1, dimsizes(1)
+!            buf(j,i) = charbuf(j,i)
+!!            if (charbuf(j, i-start(2)+1) .eq. char(0)) then
+!!              exit
+!!            endif
+!!            sbuf(j:j) = charbuf(j, i-start(2)+1)
+!          enddo
+!!          sbuf(1:dimsizes(1)) = charbuf(1:dimsizes(1), i-start(2)+1)
+!!          buf(i-start(2)+1)(1:dimsizes(1)) = sbuf(1:dimsizes(1))
+!        enddo
+!!        buf = charbuf
+!        deallocate(charbuf)
       class default
         start(1) = 1
 !        call error("unsupported type.")
