@@ -331,7 +331,7 @@ subroutine netcdf_read_data_2d(fileobj, variable_name, buf, unlim_dim_level, &
             endif
             sbuf(j:j) = charbuf(j, i-start(2)+1)
           enddo
-          call string_copy(buf(1:len(sbuf),i-start(2)+1), sbuf)
+          buf(1:len(sbuf),i-start(2)+1) = sbuf(:)
         enddo
 !        buf = charbuf
         deallocate(charbuf)
