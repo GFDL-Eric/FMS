@@ -267,9 +267,9 @@ subroutine netcdf_read_data_2d(fileobj, variable_name, buf, unlim_dim_level, &
   integer, dimension(2) :: start
   integer, dimension(2) :: dimsizes
   character, dimension(:,:), allocatable :: charbuf
-!  character(len=1024) :: sbuf
-!  integer :: i
-!  integer :: j
+  character(len=1024) :: sbuf
+  integer :: i
+  integer :: j
 
   if (present(broadcast)) then
     bcast = broadcast
@@ -323,17 +323,17 @@ subroutine netcdf_read_data_2d(fileobj, variable_name, buf, unlim_dim_level, &
         if (size(charbuf, 2) .lt. dimsizes(2)) then
           call error("incorrect buffer array size.")
         endif
-!        do i = start(2), start(2)+dimsizes(2)-1
-!          sbuf = ""
-!          do j = 1, dimsizes(1)
-!            if (charbuf(j, i-start(2)+1) .eq. char(0)) then
-!              exit
-!            endif
-!            sbuf(j:j) = charbuf(j, i-start(2)+1)
-!          enddo
-!          call string_copy(buf(i-start(2)+1,i), sbuf)
-!        enddo
-        buf = charbuf
+        do i = start(2), start(2)+dimsizes(2)-1
+          sbuf = ""
+          do j = 1, dimsizes(1)
+            if (charbuf(j, i-start(2)+1) .eq. char(0)) then
+              exit
+            endif
+            sbuf(j:j) = charbuf(j, i-start(2)+1)
+          enddo
+          call string_copy(buf(:,i-start(2)+1), sbuf)
+        enddo
+!        buf = charbuf
         deallocate(charbuf)
       class default
         start(1) = 1
