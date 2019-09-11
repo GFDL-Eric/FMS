@@ -25,7 +25,7 @@ subroutine netcdf_read_data_0d(fileobj, variable_name, buf, unlim_dim_level, &
   character, dimension(:), allocatable :: charbuf
   integer, dimension(:), allocatable :: dimsizes
   integer :: i
-  character(len=1024), dimension(1) :: buf1d
+  character(len=256), dimension(1) :: buf1d
 
   if (present(broadcast)) then
     bcast = broadcast
@@ -141,7 +141,7 @@ subroutine netcdf_read_data_1d(fileobj, variable_name, buf, unlim_dim_level, &
   integer, dimension(2) :: start
   integer, dimension(2) :: dimsizes
   character, dimension(:,:), allocatable :: charbuf
-  character(len=1024) :: sbuf
+  character(len=256) :: sbuf
   integer :: i
   integer :: j
 
