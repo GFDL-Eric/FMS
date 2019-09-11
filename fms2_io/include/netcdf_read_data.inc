@@ -212,7 +212,7 @@ subroutine netcdf_read_data_1d(fileobj, variable_name, buf, unlim_dim_level, &
           enddo
           call string_copy(buftarget(i-start(2)+1), sbuf)
         enddo
-        buf => buftarget
+        buf = buftarget
         deallocate(buftarget)
         deallocate(charbuf)
       class default
