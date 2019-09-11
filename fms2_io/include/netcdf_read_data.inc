@@ -140,6 +140,7 @@ subroutine netcdf_read_data_1d(fileobj, variable_name, buf, unlim_dim_level, &
   integer :: ndims
   integer, dimension(2) :: start
   integer, dimension(2) :: dimsizes
+  integer, dimension(1) :: dimsizestarget
   character, dimension(:,:), allocatable :: charbuf
   character(len=256) :: sbuf
   character(len=256), dimension(:), allocatable :: buftarget
@@ -191,7 +192,8 @@ subroutine netcdf_read_data_1d(fileobj, variable_name, buf, unlim_dim_level, &
         dimsizes(2) = dimsizes(2) - start(2) + 1
         call allocate_array(charbuf, dimsizes)
         charbuf(:,:) = ""
-        call allocate_array(buftarget, dimsizes(2))
+        dimsizestarget(1) = dimsizes(2)
+        call allocate_array(buftarget, dimsizestarget)
         buftarget(:) = ""
         err = nf90_get_var(fileobj%ncid, varid, charbuf, start=start, count=dimsizes)
 !        if (len(buf(1)) .lt. dimsizes(1)) then
