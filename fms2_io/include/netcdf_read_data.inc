@@ -142,6 +142,7 @@ subroutine netcdf_read_data_1d(fileobj, variable_name, buf, unlim_dim_level, &
   integer, dimension(2) :: dimsizes
   character, dimension(:,:), allocatable :: charbuf
   character(len=256) :: sbuf
+  character(len=256), dimension(:), allocatable :: buftarget
   integer :: i
   integer :: j
 
@@ -190,6 +191,8 @@ subroutine netcdf_read_data_1d(fileobj, variable_name, buf, unlim_dim_level, &
         dimsizes(2) = dimsizes(2) - start(2) + 1
         call allocate_array(charbuf, dimsizes)
         charbuf(:,:) = ""
+        call allocate_array(buftarget, dimsizes(2))
+        buftarget(:) = ""
         err = nf90_get_var(fileobj%ncid, varid, charbuf, start=start, count=dimsizes)
 !        if (len(buf(1)) .lt. dimsizes(1)) then
 !          call error("character buffer is too small; increase length.")
@@ -205,8 +208,10 @@ subroutine netcdf_read_data_1d(fileobj, variable_name, buf, unlim_dim_level, &
             endif
             sbuf(j:j) = charbuf(j, i-start(2)+1)
           enddo
-          call string_copy(buf(i-start(2)+1), sbuf)
+          call string_copy(buftarget(i-start(2)+1), sbuf)
         enddo
+        buf => buftarget
+        deallocate(buftarget)
         deallocate(charbuf)
       class default
         call error("unsupported type.")
