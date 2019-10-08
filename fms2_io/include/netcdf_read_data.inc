@@ -352,29 +352,35 @@ subroutine netcdf_read_data_3d(fileobj, variable_name, buf, unlim_dim_level, &
   integer, dimension(4) :: c
   integer, dimension(4) :: e
 
+  print *, "ncdf read 3d"
   if (present(broadcast)) then
     bcast = broadcast
   else
     bcast = .true.
   endif
+  print *, "bcast", bcast
   c(:) = 1
   if (present(corner)) then
     c(1:3) = corner(1:3)
   endif
+  print *, "c", c
   e(:) = 1
   if (present(edge_lengths)) then
     e(1:3) = edge_lengths(1:3)
   else
     e(1:3) = shape(buf)
   endif
+  print *, "e", e
   if (present(unlim_dim_level)) then
     unlim_dim_index = get_variable_unlimited_dimension_index(fileobj, variable_name, &
                                                              broadcast=bcast)
+    print *, "unlim_dim_index", unlim_dim_index
     if (unlim_dim_index .ne. 4) then
       call error("unlimited dimension must be the slowest varying dimension.")
     endif
     c(unlim_dim_index) = unlim_dim_level
   endif
+  print *, "c2", c
   if (fileobj%is_root) then
     varid = get_variable_id(fileobj%ncid, trim(variable_name))
     select type(buf)
@@ -384,8 +390,16 @@ subroutine netcdf_read_data_3d(fileobj, variable_name, buf, unlim_dim_level, &
         err = nf90_get_var(fileobj%ncid, varid, buf, start=c, count=e)
       type is (real(kind=real32))
         err = nf90_get_var(fileobj%ncid, varid, buf, start=c, count=e)
+        print *, "ncid", fileobj%ncid
+        print *, "varid", varid
+        print *, "BUF SUM", SUM(buf)
+        print *, "ERR", err
       type is (real(kind=real64))
         err = nf90_get_var(fileobj%ncid, varid, buf, start=c, count=e)
+        print *, "ncid", fileobj%ncid
+        print *, "varid", varid
+        print *, "BUF SUM", SUM(buf)
+        print *, "ERR", err
       class default
         call error("unsupported type.")
     end select
@@ -440,6 +454,7 @@ subroutine netcdf_read_data_4d(fileobj, variable_name, buf, unlim_dim_level, &
   integer, dimension(5) :: c
   integer, dimension(5) :: e
 
+  print *, "ncdf read 4d"
   if (present(broadcast)) then
     bcast = broadcast
   else

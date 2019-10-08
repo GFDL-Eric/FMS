@@ -1388,6 +1388,7 @@ subroutine get_variable_size(fileobj, variable_name, dim_sizes, broadcast)
     call check_netcdf_code(err)
     if (ndims .gt. 0) then
       if (size(dim_sizes) .ne. ndims) then
+        print *, "ndims / size(dim_sizes)", ndims, size(dim_sizes)
         call error("incorrect size of dim_sizes array.")
       endif
     else
@@ -1407,6 +1408,7 @@ subroutine get_variable_size(fileobj, variable_name, dim_sizes, broadcast)
   if (.not. fileobj%is_root) then
     if (ndims .gt. 0) then
       if (size(dim_sizes) .ne. ndims) then
+        print *, "ndims / size(dim_sizes)", ndims, size(dim_sizes)
         call error("incorrect size of dim_names array.")
       endif
     else

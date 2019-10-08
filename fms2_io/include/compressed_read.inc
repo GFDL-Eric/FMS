@@ -100,6 +100,7 @@ subroutine compressed_read_3d(fileobj, variable_name, cdata, unlim_dim_level, &
                                                               !! elements that
                                                               !! will be written
                                                               !! in each dimension.
+  print *, "compressed 3d"
 
   call netcdf_read_data(fileobj, variable_name, cdata, &
                         unlim_dim_level=unlim_dim_level, corner=corner, &
@@ -129,6 +130,7 @@ subroutine compressed_read_4d(fileobj, variable_name, cdata, unlim_dim_level, &
                                                               !! will be written
                                                               !! in each dimension.
 
+  print *, "compressed 4d"
   call netcdf_read_data(fileobj, variable_name, cdata, &
                         unlim_dim_level=unlim_dim_level, corner=corner, &
                         edge_lengths=edge_lengths, broadcast=.true.)

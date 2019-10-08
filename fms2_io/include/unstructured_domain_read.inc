@@ -123,6 +123,7 @@ subroutine unstructured_domain_read_3d(fileobj, &
                                              !! The broadcast will be done
                                              !! by default.
 
+  print *, "unstructured 3d"
   call netcdf_read_data(fileobj, variable_name, buf, unlim_dim_level, corner, &
                         edge_lengths, &
                         broadcast)
@@ -156,6 +157,7 @@ subroutine unstructured_domain_read_4d(fileobj, &
                                              !! The broadcast will be done
                                              !! by default.
 
+  print *, "unstructured 4d"
   call netcdf_read_data(fileobj, variable_name, buf, unlim_dim_level, corner, &
                         edge_lengths, &
                         broadcast)

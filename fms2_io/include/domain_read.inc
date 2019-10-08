@@ -325,6 +325,7 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
   real(kind=real64), dimension(:,:,:), allocatable :: buf_real64
   logical :: buffer_includes_halos
 
+  print *, "domain 3d"
   if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true., &
                                           xdim_index, ydim_index, xpos, ypos)) then
     call netcdf_read_data(fileobj, variable_name, vdata, &
@@ -539,6 +540,7 @@ subroutine domain_read_4d(fileobj, variable_name, vdata, unlim_dim_level, &
   real(kind=real64), dimension(:,:,:,:), allocatable :: buf_real64
   logical :: buffer_includes_halos
 
+  print *, "domain 4d"
   if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true., &
                                           xdim_index, ydim_index, xpos, ypos)) then
     call netcdf_read_data(fileobj, variable_name, vdata, &

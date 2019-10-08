@@ -425,6 +425,7 @@ module time_interp_external2_mod
       call get_variable_size(fileobj, fieldname, axislen)
       do j=1,field(num_fields)%ndim
          call get_axis_cart(fileobj, axisname(j), cart)
+         print *, "J/Cart", j, cart
          len = axislen(j)
          if (cart == 'N' .and. .not. ignore_axatts) then
             write(msg,'(a,"/",a)')  trim(file),trim(fieldname)
@@ -479,7 +480,7 @@ module time_interp_external2_mod
             endif
          case ('Z')
             field(num_fields)%axisname(3) = axisname(j)
-            field(num_fields)%siz(3) = siz_in(3)
+            field(num_fields)%siz(3) = len
          case ('T')
             field(num_fields)%axisname(4) = axisname(j)
             field(num_fields)%siz(4) = ntime
@@ -839,8 +840,11 @@ module time_interp_external2_mod
             write(outunit,*) 't1, t2, w1, w2= ', t1, t2, w1, w2
          endif
 
+         print *, "T1 / T2", t1, t2
          call load_record(field(index),t1,horz_interp, is_in, ie_in ,js_in, je_in, window_id)
          call load_record(field(index),t2,horz_interp, is_in, ie_in ,js_in, je_in, window_id)
+         print *, "Load record", SUM(field(index)%data(:,:,:,:))
+         print *, "Source Data", SUM(field(index)%src_data(:,:,:,:))
          i1 = find_buf_index(t1,field(index)%ibuf)
          i2 = find_buf_index(t2,field(index)%ibuf)
          if(i1<0.or.i2<0) &
@@ -851,6 +855,7 @@ module time_interp_external2_mod
             write(outunit,*) 'i1,i2= ',i1, i2
          endif
 
+         print *, "Time Interp Sum Field", SUM(field(index)%data(isc:iec,jsc:jec,:,i1))
          if( field(index)%region_type == NO_REGION ) then
             where(field(index)%mask(isc:iec,jsc:jec,:,i1).and.field(index)%mask(isc:iec,jsc:jec,:,i2))
                data(isw:iew,jsw:jew,:) = field(index)%data(isc:iec,jsc:jec,:,i1)*w1 + &
@@ -990,28 +995,39 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
 !$OMP CRITICAL
   ib = find_buf_index(rec,field%ibuf)
 
+  print *, "IB", ib
   if(ib>0) then
      !--- do nothing
      need_compute = .false.
+     print *, "No need for compute", field%name
   else
      ! calculate current buffer number in round-robin fasion
      field%nbuf = field%nbuf + 1
      if(field%nbuf > size(field%data,4).or.field%nbuf <= 0) field%nbuf = 1
      ib = field%nbuf
+     print *, "NEW IB", ib
      field%ibuf(ib) = rec
      field%need_compute(ib,:) = .true.
 
      if (field%domain_present .and. .not.PRESENT(interp)) then
         if (debug_this_module) write(outunit,*) 'reading record with domain for field ',trim(field%name)
         call read_data(field%fileobj,field%name,field%src_data(:,:,:,ib),unlim_dim_level=rec)
+        print *, "Source Data IF TRUE", SUM(field%src_data(:,:,:,ib))
      else
         if (debug_this_module) write(outunit,*) 'reading record without domain for field ',trim(field%name)
         start = 1; nread = 1
         start(1) = field%is_src; nread(1) = field%ie_src - field%is_src + 1
         start(2) = field%js_src; nread(2) = field%je_src - field%js_src + 1
         start(3) = 1;            nread(3) = size(field%src_data,3)
+        print *, "IB BEFORE READ DATA", ib
+        print *, "SIZE SRC DATA", size(field%src_data)
+        print *, "SIZE SRC DATA 1/2/3", size(field%src_data,1), size(field%src_data,2), size(field%src_data,3)
+        print *, "START / NREAD", start, nread
+        print *, "Field TDim", field%tdim
         start(field%tdim) = rec; nread(field%tdim) = 1
+        print *, "START / NREAD 2", start, nread
         call read_data(field%fileobj,field%name,field%src_data(:,:,:,ib),corner=start,edge_lengths=nread)
+        print *, "Source Data IF FALSE", SUM(field%src_data(:,:,:,ib))
      endif
   endif
 !$OMP END CRITICAL
@@ -1030,7 +1046,9 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
 
   ! interpolate to target grid
 
+  print *, "Source Data", SUM(field%src_data(:,:,:,ib))
   need_compute = field%need_compute(ib, window_id)
+  print *, "Need compute take 2", need_compute
   if(need_compute) then
      if(PRESENT(interp)) then
         is_region = field%is_region; ie_region = field%ie_region
