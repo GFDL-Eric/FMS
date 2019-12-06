@@ -77,7 +77,7 @@ real, allocatable, dimension(:,:) :: lon, lat
 real, allocatable, dimension(:,:,:) :: so2
 integer                           :: id_x, id_y, id_z, id_lon, id_lat, id_so2
 integer                           :: i, j, k, is, ie, js, je, unit, io, ierr, n
-real                              :: rad_to_deg
+real                              :: rad_to_deg, so2_sum_before, so2_sum_after
 character(len=36)                 :: message
 type(time_type)                   :: Time
 logical                           :: used
@@ -179,6 +179,7 @@ used = send_data(id_lat, lat, Time)
 used = send_data(id_so2, so2, Time)
 
 so2 = 2.
+so2_sum_before = mpp_chksum(so2)
 
 ! get number of threads
 
@@ -209,8 +210,6 @@ do jsw = js,je,ny_win
    enddo
 enddo
 
-print *, "SUM SO2 BEFORE: ", SUM(so2)
-
 allocate(ov_so2(nwindows))
 
 !$OMP parallel  do schedule(static) default(shared) private(isw, iew, jsw, jew)
@@ -221,16 +220,19 @@ do n = 1, nwindows
    jew = jsw + ny_win - 1
    call data_override('ATM', 'so2_cont_volc', so2(isw:iew,jsw:jew,1:nlev), Time, override=ov_so2(n), &
                       is_in=isw-is+1, ie_in=iew-is+1, js_in=jsw-js+1, je_in=jew-js+1)
-   print *, "SUM SO2 (smol) AFTER: ", SUM(so2(isw:iew,jsw:jew,1:nlev))
 enddo
 
 if(ANY(.NOT. ov_so2)) then
   message = 'override failed for so2'
-  call error_mesg('test_data_override', trim(message), FATAL)
+  call error_mesg('test_data_override_3D', trim(message), FATAL)
 endif
 
-print *, "===>NOTE from test_data_override: so2 chksum = ", mpp_chksum(so2)
-print *, "SUM SO2 AFTER: ", SUM(so2)
+so2_sum_after = mpp_chksum(so2)
+print *, "so2 sum before override", so2_sum_before
+print *, "so2 sum after override", so2_sum_after
+if(so2_sum_after == so2_sum_before) then
+  call error_mesg('test_data_override_3D', 'sums before and after override are equal', FATAL)
+endif
 
 if(id_so2 > 0) used = send_data(id_so2, so2, Time)
 
@@ -281,7 +283,6 @@ endif
 call diag_manager_end(Time)
 call fms_io_exit
 call fms_end
-call error_mesg('test_data_override', 'Mandatory Debug', FATAL)
 
 contains
 
