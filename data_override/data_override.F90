@@ -96,7 +96,7 @@ use mpp_domains_mod, only : mpp_set_global_domain, mpp_deallocate_domain
 use mpp_domains_mod, only : domainUG, mpp_pass_SG_to_UG, mpp_get_UG_SG_domain, NULL_DOMAINUG
 use time_manager_mod, only: time_type
 use fms2_io_mod,     only : FmsNetcdfDomainFile_t, FmsNetcdfFile_t, open_file, close_file, &
-                            variable_exists, read_data, get_variable_size, get_variable_num_dimensions
+                            variable_exists, read_data, get_variable_size
 use mosaic2_mod,      only : get_mosaic_tile_grid
 implicit none
 private
@@ -681,8 +681,8 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
 
   character(len=512) :: filename, filename2 !file containing source data
   character(len=128) :: fieldname ! fieldname used in the data file
-  integer            :: i,j,file_dims
-  integer            :: dims(4), dims3D(4), dims2D(3)
+  integer            :: i,j
+  integer            :: dims(4)
   integer            :: index1 ! field index in data_table
   integer            :: id_time !index for time interp in override array
   integer            :: axis_sizes(4)
@@ -705,8 +705,8 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
   logical :: need_compute
   real    :: lat_min, lat_max
   integer :: is_src, ie_src, js_src, je_src
-  logical :: exists, success
-  type(FmsNetcdfFile_t) :: fileobj, my_fil_obj
+  logical :: exists
+  type(FmsNetcdfFile_t) :: fileobj
 
   use_comp_domain = .false.
   if(.not.module_is_initialized) &
@@ -818,61 +818,15 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
         !--- we always only pass data on compute domain
         id_time = init_external_field(filename,fieldname,domain=domain,verbose=.false., &
                                       use_comp_domain=use_comp_domain, nwindows=nwindows)
-        success = open_file(my_fil_obj, filename, "read")
-        print *, "Success", success
-        print *, "File Object Path", my_fil_obj%path
-        !dims = (/ 72, 90, 1, 12 /)
-        file_dims = get_variable_num_dimensions(my_fil_obj, fieldname)
-        if ( file_dims .gt. 3) then
-            call get_variable_size(my_fil_obj, fieldname, dims3D)
-            dims(1) = dims3D(1)
-            dims(2) = dims3D(2)
-            dims(3) = dims3D(3)
-            dims(4) = dims3D(4)
-        else
-            call get_variable_size(my_fil_obj, fieldname, dims2D)
-            dims(1) = dims2D(1)
-            dims(2) = dims2D(2)
-            dims(3) = 1
-            dims(4) = dims2D(3)
-        endif
-        call close_file(my_fil_obj)
-        print *, "Filename", filename
-        print *, "Dim 1", dims(1)
-        print *, "Dim 2", dims(2)
-        print *, "Dim 3", dims(3)
-        print *, "Dim 4", dims(4)
+        dims = get_external_field_size(id_time)
         override_array(curr_position)%dims = dims
         if(id_time<0) call mpp_error(FATAL,'data_override:field not found in init_external_field 1')
         override_array(curr_position)%t_index = id_time
      else !ongrid=false
         id_time = init_external_field(filename,fieldname,domain=domain, axis_names=axis_names,&
              axis_sizes=axis_sizes, verbose=.false.,override=.true.,use_comp_domain=use_comp_domain, &
-             nwindows = nwindows)  
-        success = open_file(my_fil_obj, filename, "read")
-        print *, "Success", success
-        print *, "File Object Path", my_fil_obj%path
-        !dims = (/ 72, 90, 1, 12 /)
-        file_dims = get_variable_num_dimensions(my_fil_obj, fieldname)
-        if ( file_dims .gt. 3) then
-            call get_variable_size(my_fil_obj, fieldname, dims3D)
-            dims(1) = dims3D(1)
-            dims(2) = dims3D(2)
-            dims(3) = dims3D(3)
-            dims(4) = dims3D(4)
-        else
-            call get_variable_size(my_fil_obj, fieldname, dims2D)
-            dims(1) = dims2D(1)
-            dims(2) = dims2D(2)
-            dims(3) = 1
-            dims(4) = dims2D(3)
-        endif
-        call close_file(my_fil_obj)
-        print *, "Filename", filename
-        print *, "Dim 1", dims(1)
-        print *, "Dim 2", dims(2)
-        print *, "Dim 3", dims(3)
-        print *, "Dim 4", dims(4)
+             nwindows = nwindows)
+        dims = get_external_field_size(id_time)
         override_array(curr_position)%dims = dims
         if(id_time<0) call mpp_error(FATAL,'data_override:field not found in init_external_field 2')
         override_array(curr_position)%t_index = id_time
@@ -1052,8 +1006,7 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
 
   ! Determine if  data in netCDF file is 2D or not
   data_file_is_2D = .false.
-  print *, "Size Data", size(data), size(data,1), size(data,2), size(data,3)
-  if((dims(3) == 1) .and. (size(data,3)>1)) data_file_is_2D = .true. 
+  if((dims(3) == 1) .and. (size(data,3)>1)) data_file_is_2D = .true.
 
   if(dims(3) .NE. 1 .and. (size(data,3) .NE. dims(3))) &
       call mpp_error(FATAL, "data_override: dims(3) .NE. 1 and size(data,3) .NE. dims(3)")
@@ -1063,7 +1016,6 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
      if(data_file_is_2D) then
         call time_interp_external(id_time,time,data(:,:,1),verbose=.false., &
                                   is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
-        print *, "DATA SUM ONGRID 2D", SUM(data)
         data(:,:,1) = data(:,:,1)*factor
         do i = 2, size(data,3)
            data(:,:,i) = data(:,:,1)
@@ -1071,7 +1023,6 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
      else
         call time_interp_external(id_time,time,data,verbose=.false., &
                                   is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
-        print *, "DATA SUM ONGRID 3D", SUM(data)
         data = data*factor
      endif
   else  ! off grid case
@@ -1081,8 +1032,7 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
            call time_interp_external(id_time,time,data(:,:,1),verbose=.false., &
                    horz_interp=override_array(curr_position)%horz_interp(window_id), &
                    is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
-           print *, "DATA SUM OFFGRID 2D GLOBAL", SUM(data)
-           data(:,:,1) = data(:,:,1)*factor   
+           data(:,:,1) = data(:,:,1)*factor
            do i = 2, size(data,3)
              data(:,:,i) = data(:,:,1)
            enddo
@@ -1093,7 +1043,6 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
                    horz_interp=override_array(curr_position)%horz_interp(window_id),      &
                    mask_out   =mask_out(:,:,1), &
                    is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
-           print *, "DATA SUM OFFGRID 2D REGIONAL", SUM(data)
            where(mask_out(:,:,1))
               data(:,:,1) = data(:,:,1)*factor
            end where
@@ -1106,10 +1055,9 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
         endif
      else
         if( data_table(index1)%region_type == NO_REGION ) then
-           call time_interp_external(id_time,time,data,verbose=.true.,      &
+           call time_interp_external(id_time,time,data,verbose=.false.,      &
                 horz_interp=override_array(curr_position)%horz_interp(window_id), &
                 is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
-           print *, "DATA SUM OFFGRID 3D GLOBAL", SUM(data)
            data = data*factor
         else
            allocate(mask_out(size(data,1), size(data,2), size(data,3)) )
@@ -1118,7 +1066,6 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
                 horz_interp=override_array(curr_position)%horz_interp(window_id),    &
                 mask_out   =mask_out, &
                 is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
-           print *, "DATA SUM OFFGRID 3D REGIONAL", SUM(data)
 
            where(mask_out)
               data = data*factor
@@ -1129,7 +1076,6 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
 
   endif
 
-  print *, "DATA SUM FINAL", SUM(data)
   if(PRESENT(override)) override = .true.
 
 end subroutine data_override_3d
