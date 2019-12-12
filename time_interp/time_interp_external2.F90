@@ -983,14 +983,20 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
   integer :: isw,iew,jsw,jew ! boundaries of the domain on each window
   integer :: is_region, ie_region, js_region, je_region, i, j, n
   integer :: start(4), nread(4)
-  logical :: need_compute
+  logical :: need_compute, read_weights
   real    :: mask_in(size(field%src_data,1),size(field%src_data,2),size(field%src_data,3))
+  real    :: raw_src_data(size(field%src_data,1),size(field%src_data,2),size(field%src_data,3))
+  real    :: weights(size(field%src_data,1),size(field%src_data,2),size(field%src_data,3))
   real, allocatable :: mask_out(:,:,:)
   integer :: window_id
 
   window_id = 1
   if( PRESENT(window_id_in) ) window_id = window_id_in
   need_compute = .true.
+
+  read_weights = variable_exists(field%fileobj, trim(field%name) // "_weights")
+  print *, trim(field%name) // "_weights"
+  print *, "read_weights", read_weights
 
 !$OMP CRITICAL
   ib = find_buf_index(rec,field%ibuf)
@@ -1009,10 +1015,17 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
      field%ibuf(ib) = rec
      field%need_compute(ib,:) = .true.
 
+     weights = 1.
      if (field%domain_present .and. .not.PRESENT(interp)) then
         if (debug_this_module) write(outunit,*) 'reading record with domain for field ',trim(field%name)
-        call read_data(field%fileobj,field%name,field%src_data(:,:,:,ib),unlim_dim_level=rec)
+        call read_data(field%fileobj,field%name,raw_src_data(:,:,:),unlim_dim_level=rec)
+        if(read_weights) then
+          call read_data(field%fileobj,trim(field%name) // "_weights",weights(:,:,:),unlim_dim_level=rec)
+        endif
+        field%src_data(:,:,:,ib) = raw_src_data * weights
         print *, "Source Data IF TRUE", SUM(field%src_data(:,:,:,ib))
+        print *, "Weights IF TRUE", SUM(weights(:,:,:))
+        print *, "Raw Data IF TRUE", SUM(raw_src_data(:,:,:))
      else
         if (debug_this_module) write(outunit,*) 'reading record without domain for field ',trim(field%name)
         start = 1; nread = 1
@@ -1026,8 +1039,14 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
         print *, "Field TDim", field%tdim
         start(field%tdim) = rec; nread(field%tdim) = 1
         print *, "START / NREAD 2", start, nread
-        call read_data(field%fileobj,field%name,field%src_data(:,:,:,ib),corner=start,edge_lengths=nread)
+        call read_data(field%fileobj,field%name,raw_src_data(:,:,:),corner=start,edge_lengths=nread)
+        if(read_weights) then
+          call read_data(field%fileobj,trim(field%name) // "_weights",weights(:,:,:),corner=start,edge_lengths=nread)
+        endif
+        field%src_data(:,:,:,ib) = raw_src_data * weights
         print *, "Source Data IF FALSE", SUM(field%src_data(:,:,:,ib))
+        print *, "Weights IF FALSE", SUM(weights(:,:,:))
+        print *, "Raw Data IF FALSE", SUM(raw_src_data(:,:,:))
      endif
   endif
 !$OMP END CRITICAL
