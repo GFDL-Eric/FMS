@@ -74,7 +74,7 @@ type(domain2d)                    :: Domain
 integer                           :: nlon, nlat, nlev, siz(4)
 real, allocatable, dimension(:)   :: x, y, z
 real, allocatable, dimension(:,:) :: lon, lat
-real, allocatable, dimension(:,:,:) :: so2
+real, allocatable, dimension(:,:,:) :: so2, mod_so2, obs_so2, mod_so2_coeff, obs_so2_coeff
 integer                           :: id_x, id_y, id_z, id_lon, id_lat, id_so2
 integer                           :: i, j, k, is, ie, js, je, unit, io, ierr, n
 real                              :: rad_to_deg, so2_sum_before, so2_sum_after
@@ -165,7 +165,8 @@ enddo
 
 Time = set_date(2000,7,1,0,0,0)
 
-allocate(so2(is:ie,js:je,1:nlev))
+allocate(so2(is:ie,js:je,1:nlev), mod_so2(is:ie,js:je,1:nlev), obs_so2(is:ie,js:je,1:nlev))
+allocate(mod_so2_coeff(is:ie,js:je,1:nlev), obs_so2_coeff(is:ie,js:je,1:nlev))
 
 id_x  = diag_axis_init('x',  x,  'point_E', 'x', long_name='point_E', Domain2=Domain)
 id_y  = diag_axis_init('y',  y,  'point_N', 'y', long_name='point_N', Domain2=Domain)
@@ -178,8 +179,8 @@ used = send_data(id_lon, lon, Time)
 used = send_data(id_lat, lat, Time)
 used = send_data(id_so2, so2, Time)
 
-so2 = 2.
-so2_sum_before = mpp_chksum(so2)
+mod_so2 = 2.
+so2_sum_before = mpp_chksum(mod_so2)
 
 ! get number of threads
 
@@ -218,9 +219,15 @@ do n = 1, nwindows
    iew = isw + nx_win - 1
    jsw = js_win(n)
    jew = jsw + ny_win - 1
-   call data_override('ATM', 'so2_cont_volc', so2(isw:iew,jsw:jew,1:nlev), Time, override=ov_so2(n), &
+   call data_override('ATM', 'so2_cont_volc', obs_so2(isw:iew,jsw:jew,1:nlev), Time, override=ov_so2(n), &
+                      is_in=isw-is+1, ie_in=iew-is+1, js_in=jsw-js+1, je_in=jew-js+1)
+   call data_override('ATM', 'so2_cont_volc_coeff', obs_so2_coeff(isw:iew,jsw:jew,1:nlev), Time, &
+                      is_in=isw-is+1, ie_in=iew-is+1, js_in=jsw-js+1, je_in=jew-js+1)
+   call data_override('ATM', 'so2_cont_volc_mod_coeff', mod_so2_coeff(isw:iew,jsw:jew,1:nlev), Time, &
                       is_in=isw-is+1, ie_in=iew-is+1, js_in=jsw-js+1, je_in=jew-js+1)
 enddo
+
+so2 = mod_so2 * mod_so2_coeff + obs_so2 * obs_so2_coeff
 
 if(ANY(.NOT. ov_so2)) then
   message = 'override failed for so2'
@@ -230,6 +237,9 @@ endif
 so2_sum_after = mpp_chksum(so2)
 print *, "so2 sum before override", so2_sum_before
 print *, "so2 sum after override", so2_sum_after
+print *, "mod so2 sum after override", mpp_chksum(mod_so2)
+print *, "obs so2 coeff sum after override", mpp_chksum(obs_so2_coeff)
+print *, "mod so2 coeff sum after override", mpp_chksum(mod_so2_coeff)
 if(so2_sum_after == so2_sum_before) then
   call error_mesg('test_data_override_3D', 'sums before and after override are equal', FATAL)
 endif
