@@ -81,7 +81,7 @@ real                              :: rad_to_deg, so2_sum_before, so2_sum_after
 character(len=36)                 :: message
 type(time_type)                   :: Time
 logical                           :: used
-logical, allocatable              :: ov_so2(:)
+logical, allocatable              :: ov_so2(:), ov_so2_obs_coeff(:), ov_so2_mod_coeff(:)
 integer, dimension(2)             :: layout = (/0,0/)
 character(len=256)                :: solo_mosaic_file, tile_file
 character(len=128)                :: grid_file   = "INPUT/grid_spec.nc"
@@ -180,8 +180,15 @@ used = send_data(id_lat, lat, Time)
 used = send_data(id_so2, so2, Time)
 
 mod_so2 = 2.
-so2_sum_before = mpp_chksum(mod_so2)
+obs_so2 = 2.
+obs_so2_coeff = 1.
+mod_so2_coeff = 1.
 
+so2_sum_before = SUM(mod_so2)
+print *, "so2 sum before override", so2_sum_before
+print *, "obs so2 sum before override", SUM(obs_so2)
+print *, "obs so2 coeff sum before override", SUM(obs_so2_coeff)
+print *, "mod so2 coeff sum before override", SUM(mod_so2_coeff)
 ! get number of threads
 
 nx_dom = ie - is + 1
@@ -211,7 +218,7 @@ do jsw = js,je,ny_win
    enddo
 enddo
 
-allocate(ov_so2(nwindows))
+allocate(ov_so2(nwindows), ov_so2_obs_coeff(nwindows), ov_so2_mod_coeff(nwindows))
 
 !$OMP parallel  do schedule(static) default(shared) private(isw, iew, jsw, jew)
 do n = 1, nwindows
@@ -221,9 +228,9 @@ do n = 1, nwindows
    jew = jsw + ny_win - 1
    call data_override('ATM', 'so2_cont_volc', obs_so2(isw:iew,jsw:jew,1:nlev), Time, override=ov_so2(n), &
                       is_in=isw-is+1, ie_in=iew-is+1, js_in=jsw-js+1, je_in=jew-js+1)
-   call data_override('ATM', 'so2_cont_volc_coeff', obs_so2_coeff(isw:iew,jsw:jew,1:nlev), Time, &
+   call data_override('ATM', 'so2_cont_volc_coeff', obs_so2_coeff(isw:iew,jsw:jew,1:nlev), Time, override=ov_so2_obs_coeff(n), &
                       is_in=isw-is+1, ie_in=iew-is+1, js_in=jsw-js+1, je_in=jew-js+1)
-   call data_override('ATM', 'so2_cont_volc_mod_coeff', mod_so2_coeff(isw:iew,jsw:jew,1:nlev), Time, &
+   call data_override('ATM', 'so2_cont_volc_mod_coeff', mod_so2_coeff(isw:iew,jsw:jew,1:nlev), Time, override=ov_so2_mod_coeff(n), &
                       is_in=isw-is+1, ie_in=iew-is+1, js_in=jsw-js+1, je_in=jew-js+1)
 enddo
 
@@ -234,12 +241,12 @@ if(ANY(.NOT. ov_so2)) then
   call error_mesg('test_data_override_3D', trim(message), FATAL)
 endif
 
-so2_sum_after = mpp_chksum(so2)
-print *, "so2 sum before override", so2_sum_before
+so2_sum_after = SUM(so2)
 print *, "so2 sum after override", so2_sum_after
-print *, "mod so2 sum after override", mpp_chksum(mod_so2)
-print *, "obs so2 coeff sum after override", mpp_chksum(obs_so2_coeff)
-print *, "mod so2 coeff sum after override", mpp_chksum(mod_so2_coeff)
+print *, "mod so2 sum after override", SUM(mod_so2)
+print *, "obs so2 coeff sum after override", SUM(obs_so2_coeff)
+print *, "mod so2 coeff sum after override", SUM(mod_so2_coeff)
+
 if(so2_sum_after == so2_sum_before) then
   call error_mesg('test_data_override_3D', 'sums before and after override are equal', FATAL)
 endif
