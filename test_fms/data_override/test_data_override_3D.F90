@@ -52,6 +52,7 @@ use  time_manager_mod, only: time_type, set_calendar_type, set_date, NOLEAP, ope
 use  diag_manager_mod, only: diag_manager_init, diag_manager_end, register_static_field, register_diag_field
 use  diag_manager_mod, only: send_data, diag_axis_init
 use data_override_mod, only: data_override_init, data_override, data_override_UG
+use data_override_mod, only: nudge3D, new_nudge3D, data_nudge
 use           mpp_mod, only: mpp_pe, mpp_npes, mpp_root_pe, mpp_error, FATAL, NOTE
 use           mpp_mod, only: input_nml_file, stdout, stderr, mpp_chksum
 use           mpp_mod, only: mpp_sync_self, mpp_broadcast
@@ -74,7 +75,7 @@ type(domain2d)                    :: Domain
 integer                           :: nlon, nlat, nlev, siz(4)
 real, allocatable, dimension(:)   :: x, y, z
 real, allocatable, dimension(:,:) :: lon, lat
-real, allocatable, dimension(:,:,:) :: so2, mod_so2, obs_so2, mod_so2_coeff, obs_so2_coeff
+real, allocatable, dimension(:,:,:) :: so2, mod_so2 !, obs_so2, mod_so2_coeff, obs_so2_coeff
 integer                           :: id_x, id_y, id_z, id_lon, id_lat, id_so2
 integer                           :: i, j, k, is, ie, js, je, unit, io, ierr, n
 real                              :: rad_to_deg, so2_sum_before, so2_sum_after
@@ -85,6 +86,7 @@ logical, allocatable              :: ov_so2(:), ov_so2_obs_coeff(:), ov_so2_mod_
 integer, dimension(2)             :: layout = (/0,0/)
 character(len=256)                :: solo_mosaic_file, tile_file
 character(len=128)                :: grid_file   = "INPUT/grid_spec.nc"
+type(nudge3D), allocatable, dimension(:) :: this_nudge
 integer                           :: window(2) = (/1,1/)
 integer                           :: get_cpu_affinity, base_cpu
 integer                           :: nthreads=1
@@ -165,8 +167,9 @@ enddo
 
 Time = set_date(2000,7,1,0,0,0)
 
-allocate(so2(is:ie,js:je,1:nlev), mod_so2(is:ie,js:je,1:nlev), obs_so2(is:ie,js:je,1:nlev))
-allocate(mod_so2_coeff(is:ie,js:je,1:nlev), obs_so2_coeff(is:ie,js:je,1:nlev))
+allocate(so2(is:ie,js:je,1:nlev), mod_so2(is:ie,js:je,1:nlev))
+!allocate(so2(is:ie,js:je,1:nlev), mod_so2(is:ie,js:je,1:nlev), obs_so2(is:ie,js:je,1:nlev))
+!allocate(mod_so2_coeff(is:ie,js:je,1:nlev), obs_so2_coeff(is:ie,js:je,1:nlev))
 
 id_x  = diag_axis_init('x',  x,  'point_E', 'x', long_name='point_E', Domain2=Domain)
 id_y  = diag_axis_init('y',  y,  'point_N', 'y', long_name='point_N', Domain2=Domain)
@@ -180,15 +183,16 @@ used = send_data(id_lat, lat, Time)
 used = send_data(id_so2, so2, Time)
 
 mod_so2 = 2.
-obs_so2 = 2.
-obs_so2_coeff = 1.
-mod_so2_coeff = 1.
+so2 = 1.
+!obs_so2 = 2.
+!obs_so2_coeff = 1.
+!mod_so2_coeff = 1.
 
 so2_sum_before = SUM(mod_so2)
 print *, "so2 sum before override", so2_sum_before
-print *, "obs so2 sum before override", SUM(obs_so2)
-print *, "obs so2 coeff sum before override", SUM(obs_so2_coeff)
-print *, "mod so2 coeff sum before override", SUM(mod_so2_coeff)
+!print *, "obs so2 sum before override", SUM(obs_so2)
+!print *, "obs so2 coeff sum before override", SUM(obs_so2_coeff)
+!print *, "mod so2 coeff sum before override", SUM(mod_so2_coeff)
 ! get number of threads
 
 nx_dom = ie - is + 1
@@ -219,6 +223,7 @@ do jsw = js,je,ny_win
 enddo
 
 allocate(ov_so2(nwindows), ov_so2_obs_coeff(nwindows), ov_so2_mod_coeff(nwindows))
+allocate(this_nudge(nwindows))
 
 !$OMP parallel  do schedule(static) default(shared) private(isw, iew, jsw, jew)
 do n = 1, nwindows
@@ -226,26 +231,23 @@ do n = 1, nwindows
    iew = isw + nx_win - 1
    jsw = js_win(n)
    jew = jsw + ny_win - 1
-   call data_override('ATM', 'so2_cont_volc', obs_so2(isw:iew,jsw:jew,1:nlev), Time, override=ov_so2(n), &
-                      is_in=isw-is+1, ie_in=iew-is+1, js_in=jsw-js+1, je_in=jew-js+1)
-   call data_override('ATM', 'so2_cont_volc_coeff', obs_so2_coeff(isw:iew,jsw:jew,1:nlev), Time, override=ov_so2_obs_coeff(n), &
-                      is_in=isw-is+1, ie_in=iew-is+1, js_in=jsw-js+1, je_in=jew-js+1)
-   call data_override('ATM', 'so2_cont_volc_mod_coeff', mod_so2_coeff(isw:iew,jsw:jew,1:nlev), Time, override=ov_so2_mod_coeff(n), &
-                      is_in=isw-is+1, ie_in=iew-is+1, js_in=jsw-js+1, je_in=jew-js+1)
+   this_nudge(n) = new_nudge3D('ATM', 'so2_cont_volc', (/isw,iew/), (/jsw,jew/), (/1,nlev/))
+   this_nudge(n)%model_input = mod_so2(isw:iew,jsw:jew,1:nlev)
+   call data_nudge(this_nudge(n), Time, ov_so2(n), is_in=isw-is+1, ie_in=iew-is+1, js_in=jsw-js+1, je_in=jew-js+1)
+   so2(isw:iew,jsw:jew,1:nlev) = this_nudge(n)%nudge_output
 enddo
 
-so2 = mod_so2 * mod_so2_coeff + obs_so2 * obs_so2_coeff
 
 if(ANY(.NOT. ov_so2)) then
-  message = 'override failed for so2'
+  message = 'nudge failed for so2'
   call error_mesg('test_data_override_3D', trim(message), FATAL)
 endif
 
 so2_sum_after = SUM(so2)
 print *, "so2 sum after override", so2_sum_after
-print *, "mod so2 sum after override", SUM(mod_so2)
-print *, "obs so2 coeff sum after override", SUM(obs_so2_coeff)
-print *, "mod so2 coeff sum after override", SUM(mod_so2_coeff)
+!print *, "mod so2 sum after override", SUM(mod_so2)
+!print *, "obs so2 coeff sum after override", SUM(obs_so2_coeff)
+!print *, "mod so2 coeff sum after override", SUM(mod_so2_coeff)
 
 if(so2_sum_after == so2_sum_before) then
   call error_mesg('test_data_override_3D', 'sums before and after override are equal', FATAL)
