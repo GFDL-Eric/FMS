@@ -74,7 +74,6 @@ module data_override_mod
 ! A field can be overriden globally (by default) or users can specify one or two regions in which
 ! data_override will take place, field values outside the region will not be affected.
 !</OVERVIEW>
-#include <fms_platform.h>
 use platform_mod, only: r8_kind
 use constants_mod, only: PI
 use mpp_mod, only : mpp_error,FATAL,WARNING,mpp_pe,stdout,stdlog,mpp_root_pe, NOTE, mpp_min, mpp_max, mpp_chksum
@@ -101,9 +100,6 @@ use mosaic2_mod,      only : get_mosaic_tile_grid
 implicit none
 private
 
-! Include variable "version" to be written to log file.
-#include<file_version.h>
-
 type data_type
    character(len=3)   :: gridname
    character(len=128) :: fieldname_code !fieldname used in user's code (model)
@@ -124,9 +120,9 @@ type override_type
    integer                          :: dims(4)                 ! dimensions(x,y,z,t) of the field in filename
    integer                          :: comp_domain(4)          ! istart,iend,jstart,jend for compute domain
    integer                          :: numthreads
-   real, _ALLOCATABLE               :: lon_in(:) _NULL
-   real, _ALLOCATABLE               :: lat_in(:) _NULL
-   logical, _ALLOCATABLE            :: need_compute(:) _NULL
+   real, allocatable                :: lon_in(:)
+   real, allocatable                :: lat_in(:)
+   logical, allocatable             :: need_compute(:)
    integer                          :: numwindows
    integer                          :: window_size(2)
    integer                          :: is_src, ie_src, js_src, je_src
@@ -136,7 +132,7 @@ end type override_type
  integer            :: table_size ! actual size of data table
  integer, parameter :: ANNUAL=1, MONTHLY=2, DAILY=3, HOURLY=4, UNDEF=-1
  real, parameter    :: tpi=2*PI
- real               :: deg_to_radian, radian_to_deg
+ real               :: deg_to_radian=PI/180., radian_to_deg=180./PI
  logical            :: module_is_initialized = .FALSE.
 
 type(domain2D),save :: ocn_domain,atm_domain,lnd_domain, ice_domain
@@ -191,7 +187,7 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
   type (domain2d), intent(in), optional :: Atm_domain_in
   type (domain2d), intent(in), optional :: Ocean_domain_in, Ice_domain_in
   type (domain2d), intent(in), optional :: Land_domain_in
-  type(domainUG) , intent(in), optional :: Land_domainUG_in
+  type (domainUG), intent(in), optional :: Land_domainUG_in
 
 ! <NOTE>
 ! This subroutine should be called in coupler_init after
@@ -224,13 +220,13 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
   unit = stdlog()
   write(unit, data_override_nml)
 
-!  if(module_is_initialized) return
-
   atm_on = PRESENT(Atm_domain_in)
   ocn_on = PRESENT(Ocean_domain_in)
   lnd_on = PRESENT(Land_domain_in)
   ice_on = PRESENT(Ice_domain_in)
   lndUG_on = PRESENT(Land_domainUG_in)
+  if ( .NOT. (atm_on .or. ocn_on .or. lnd_on .or. ice_on .or. lndUG_on)) return
+
   if(.not. module_is_initialized) then
     atm_domain = NULL_DOMAIN2D
     ocn_domain = NULL_DOMAIN2D
@@ -246,9 +242,6 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
 
   if(.not. module_is_initialized) then
     call horiz_interp_init
-    radian_to_deg = 180./PI
-    deg_to_radian = PI/180.
-
     call write_version_number("DATA_OVERRIDE_MOD", version)
 
 !  Initialize user-provided data table
@@ -393,7 +386,6 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
 
  module_is_initialized = .TRUE.
 
- if ( .NOT. (atm_on .or. ocn_on .or. lnd_on .or. ice_on .or. lndUG_on)) return
  call fms_io_init
 
 ! Test if grid_file is already opened
