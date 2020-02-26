@@ -19,11 +19,11 @@
 
 program test
 
-  use           fms_mod, only: fms_init, fms_end, check_nml_error
-  use           fms_mod, only: error_mesg, field_exist, field_size
+  use           fms_mod, only: fms_init, fms_end, check_nml_error, open_namelist_file
+  use           fms_mod, only: error_mesg, field_exist, field_size, close_file
   use        fms_io_mod, only: read_data, fms_io_exit
   use  fms_affinity_mod, only: fms_affinity_set
-  use  time_manager_mod, only: time_type
+  use  time_manager_mod, only: time_type, set_date, set_calendar_type, NOLEAP
   use  diag_manager_mod, only: diag_manager_init, diag_manager_end, register_static_field, register_diag_field
   use  diag_manager_mod, only: send_data, diag_axis_init
   use data_override_mod, only: data_override_init, data_override, data_override_UG
@@ -42,7 +42,7 @@ program test
     character(len=128)   :: varname
     character(len=3)     :: grid
     real, allocatable    :: array(:,:)
-    real                 :: before_sum
+    real                 :: before
     real                 :: after
     logical, allocatable :: override(:)
   end type dataOverrideVariable_t
@@ -57,21 +57,33 @@ program test
   type(domain2d)                    :: Domain
   integer                           :: nlon, nlat
   real, allocatable, dimension(:,:) :: lon, lat
-  integer                           :: i, j, is, ie, js, je, io, ierr, n
-  character(len=256)                :: tile_file
+  integer                           :: i, j, is, ie, js, je, io, ierr, n, unit
+  character(len=256)                :: tile_file, grid_file
   type(time_type)                   :: Time
   integer, dimension(2)             :: layout = (/0,0/)
   integer                           :: window(2) = (/1,1/)
   integer                           :: nwindows
   type(dataOverrideVariable_t)      :: vardo
-  namelist / test_data_override_nml / layout, window, nthreads
+!  namelist / test_data_override_nml / layout, window, nthreads
  
-  read (input_nml_file, test_data_override_nml, iostat=io)
-  ierr = check_nml_error(io, 'test_data_override_nml')
+!#ifdef INTERNAL_FILE_NML
+!  read (input_nml_file, test_data_override_nml, iostat=io)
+!  ierr = check_nml_error(io, 'test_data_override_nml')
+!#else
+!  if (file_exist('input.nml')) then
+!    unit = open_namelist_file ( )
+!    ierr=1
+!    do while (ierr /= 0)
+!      read(unit, nml=test_data_override_nml, iostat=io, end=10)
+!      ierr = check_nml_error(io, 'test_data_override_nml')
+!    enddo
+!10 call close_file (unit)
+!  endif
+!#endif
 
   call fms_init
 
-  call get_nlon_nlat(tile_file, nlon, nlat)
+  call get_nlon_nlat(tile_file, grid_file, nlon, nlat)
 
   if(layout(1)*layout(2) .NE. mpp_npes() ) then
     call mpp_define_layout( (/1,nlon,1,nlat/), mpp_npes(), layout )
@@ -83,6 +95,7 @@ program test
   call mpp_get_compute_domain(Domain, is, ie, js, je)
   call get_grid
 
+  call set_calendar_type(NOLEAP)
   Time = set_date(2000,7,1,0,0,0)
  
   nx_dom = ie - is + 1
@@ -101,8 +114,8 @@ program test
   i = 1
   do jsw = js,je,ny_win
     do isw = is,ie,nx_win
-      is_win(m) = isw
-      js_win(m) = jsw
+      is_win(i) = isw
+      js_win(i) = jsw
       i = i + 1
     end do
   end do
@@ -124,8 +137,8 @@ program test
                       is_in=isw-is+1, ie_in=iew-is+1, js_in=jsw-js+1, je_in=jew-js+1)
   enddo
 
-  call check_override_fails(vardo)
   call print_before_sums(vardo)
+  call check_override_fails(vardo)
   call calc_after_sum(vardo)
   call print_after_sums(vardo)
   call check_sums_equal(vardo)
@@ -151,14 +164,14 @@ contains
     vardo%array = 1.0
     vardo%before = SUM(vardo%array)
     allocate(vardo%override(nwindows))
-  end function constuct_data_override_variable
+  end function construct_data_override_variable
 
   subroutine destruct_data_override_variable(vardo)
     type(dataOverrideVariable_t) :: vardo
 
     deallocate(vardo%array)
-    deallocate(vardo%override(nwindows))
-  end subroutine destuct_data_override_variable
+    deallocate(vardo%override)
+  end subroutine destruct_data_override_variable
 
   subroutine calc_after_sum(vardo)
     type(dataOverrideVariable_t), intent(inout) :: vardo
@@ -187,10 +200,12 @@ contains
   subroutine check_override_fails(vardo)
     type(dataOverrideVariable_t), intent(inout) :: vardo
     character(len=128)                          :: message
+    
     if(ANY(.NOT. vardo%override)) then
       message = 'override failed for '//trim(vardo%varname)
+      call error_mesg('test_data_override', trim(message), FATAL)
     endif
-    call error_mesg('test_data_override', trim(message), FATAL)
+    print *, message
   end subroutine check_override_fails
 
   subroutine send_data_data_override
@@ -213,29 +228,27 @@ contains
    
     id_lon = register_static_field('test_data_override_mod', 'lon', (/id_x,id_y/), 'longitude', 'Degrees')
     id_lat = register_static_field('test_data_override_mod', 'lat', (/id_x,id_y/), 'latitude', 'Degrees')
-    id_var1 = register_diag_field('test_data_override_mod', 'var1', (/id_x,id_y/), Time, 'var1', ' ')
-    id_var2 = register_diag_field('test_data_override_mod', 'var2', (/id_x,id_y/), Time, 'var2', ' ')
-    id_var3 = register_diag_field('test_data_override_mod', 'var3', (/id_x,id_y/), Time, 'var3', ' ')
+    id_var1 = register_diag_field('test_data_override_mod', 'sst_obs', (/id_x,id_y/), Time, 'sst_obs', ' ')
   
     used = send_data(id_lon, lon, Time)
     used = send_data(id_lat, lat, Time)
-    if(id_var1 > 0) used = send_data(id_var1, var1, Time)
-    if(id_var2 > 0) used = send_data(id_var2, var2, Time)
-    if(id_var3 > 0) used = send_data(id_var3, var3, Time)
+    if(id_var1 > 0) used = send_data(id_var1, vardo%array, Time)
 
     deallocate(x, y)
     call diag_manager_end(Time)
 
   end subroutine send_data_data_override 
-  subroutine get_nlon_nlat(tile_file, nlon, nlat, grid_file)
-    character(len=128), intent(in), optional :: grid_file
-    character(len=256), intent(out)          :: tile_file
+  subroutine get_nlon_nlat(tile_file, grid_file, nlon, nlat, grid_file_name)
+    character(len=128), intent(in), optional :: grid_file_name
+    character(len=256), intent(out)          :: tile_file, grid_file
     integer, intent(out)                     :: nlon, nlat
     character(len=256)                       :: solo_mosaic_file
     integer, dimension(4)                    :: siz
 
-    if (.not. present(grid_file)) then
-        grid_file = "INPUT/grid_spec.nc"
+    if (.not. present(grid_file_name)) then
+      grid_file = "INPUT/grid_spec.nc"
+    else
+      grid_file = trim(grid_file_name)
     end if
     if(field_exist(grid_file, "x_T" ) ) then
       call field_size(grid_file, 'x_T', siz)

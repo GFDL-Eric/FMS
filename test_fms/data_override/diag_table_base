@@ -5,5 +5,4 @@ test_data_override
  "test_data_override",  -1, "days", 1, "days", "time"
 
 #output variables
- "test_data_override_mod", "var1", "var1", "test_data_override",  "all", .false., "none", 2
- "test_data_override_mod", "var2", "var2", "test_data_override",  "all", .false., "none", 2
+ "test_data_override_mod", "sst_obs", "sst_obs", "test_data_override",  "all", .false., "none", 2
