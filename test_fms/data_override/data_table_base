@@ -1,4 +1,14 @@
-"ICE", "sst_obs",  "SST", "INPUT/sst_ice_clim.nc", .false., 300.0
-"ICE", "sic_obs",  "SIC", "INPUT/sst_ice_clim.nc", .false., 300.0
-"OCN", "sst_obs",  "SST", "INPUT/sst_ice_clim.nc", .false., 300.0
-"LND", "sst_obs",  "SST", "INPUT/sst_ice_clim.nc", .false., 300.0
+#"ICE", "sst_obs",  "SST", "INPUT/sst_ice_clim.nc", "bilinear", 300.0
+#"ICE", "sic_obs",  "SIC", "INPUT/sst_ice_clim.nc", "bilinear", 300.0
+"OCN", "sst_obs",  "SST", "INPUT/sst_ice_clim.nc", "bilinear", 300.0
+#"LND", "sst_obs",  "SST", "INPUT/sst_ice_clim.nc", "bilinear", 300.0
+"OCN", "runoff_no3_flux_ice_ocn",   "NO3_CONC",   "INPUT/news_nutrients.nc","none",1.0e-3
+"OCN", "runoff_ldon_flux_ice_ocn",  "LDON_CONC",  "INPUT/news_nutrients.nc","none",1.0e-3
+"OCN", "runoff_sldon_flux_ice_ocn", "SLDON_CONC", "INPUT/news_nutrients.nc","none",1.0e-3
+"OCN", "runoff_srdon_flux_ice_ocn", "SRDON_CONC", "INPUT/news_nutrients.nc","none",1.0e-3
+"OCN", "runoff_ndet_flux_ice_ocn",  "NDET_CONC",  "INPUT/news_nutrients.nc","none",1.0e-3
+"OCN", "runoff_po4_flux_ice_ocn",   "PO4_CONC",   "INPUT/news_nutrients.nc","none",1.65e-3
+"OCN", "var3",                      "LDOP_CONC",  "INPUT/news_nutrients.nc","none",1.65e-3
+"OCN", "var1",                      "SLDOP_CONC", "INPUT/news_nutrients.nc","none",1.65e-3
+"OCN", "var2",                      "SRDOP_CONC", "INPUT/news_nutrients.nc","none",1.65e-3
+"OCN", "runoff_fe_flux_ice_ocn",    "FED_CONC",   "INPUT/river_iron.nc",    "none",1.0e-3
