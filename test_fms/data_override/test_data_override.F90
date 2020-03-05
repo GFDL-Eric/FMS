@@ -21,20 +21,17 @@ program test
 
   use           fms_mod, only: fms_init, fms_end, check_nml_error, open_namelist_file
   use           fms_mod, only: error_mesg, field_exist, field_size, close_file
-  use        fms_io_mod, only: read_data, fms_io_exit
+  use        fms_io_mod, only: read_data, fms_io_exit, file_exist
   use  fms_affinity_mod, only: fms_affinity_set
   use  time_manager_mod, only: time_type, set_date, set_calendar_type, NOLEAP
   use  diag_manager_mod, only: diag_manager_init, diag_manager_end, register_static_field, register_diag_field
   use  diag_manager_mod, only: send_data, diag_axis_init
   use data_override_mod, only: data_override_init, data_override, data_override_UG
   use           mpp_mod, only: mpp_pe, mpp_npes, mpp_root_pe, mpp_error, FATAL, NOTE
-  use           mpp_mod, only: input_nml_file, stdout, stderr, mpp_chksum
+  use           mpp_mod, only: input_nml_file, mpp_chksum
   use           mpp_mod, only: mpp_sync_self, mpp_broadcast
   use   mpp_domains_mod, only: domain2d, mpp_define_domains, mpp_define_io_domain, mpp_define_layout
-  use   mpp_domains_mod, only: domain2D, mpp_define_mosaic, cyclic_global_domain
-  use   mpp_domains_mod, only: mpp_get_compute_domain, mpp_get_compute_domains, mpp_get_data_domain
-  use   mpp_domains_mod, only: domainUG, mpp_define_unstruct_domain
-  use   mpp_domains_mod, only: mpp_get_UG_compute_domain, mpp_pass_SG_to_UG, mpp_pass_UG_to_SG
+  use   mpp_domains_mod, only: mpp_get_compute_domain
 
   implicit none
  
@@ -52,7 +49,6 @@ program test
   character(len=3)                  :: gridname='OCN'
   integer                           :: omp_get_num_threads
   integer                           :: isw, iew, jsw, jew
-  integer, allocatable              :: is_win(:), js_win(:)
   integer                           :: nx_dom, ny_dom, nx_win, ny_win
   type(domain2d)                    :: Domain
   integer                           :: nlon, nlat
@@ -62,25 +58,23 @@ program test
   type(time_type)                   :: Time
   integer, dimension(2)             :: layout = (/0,0/)
   integer                           :: window(2) = (/1,1/)
-  integer                           :: nwindows
+  integer                           :: nwindows, testnum
   type(dataOverrideVariable_t)      :: vardo
-!  namelist / test_data_override_nml / layout, window, nthreads
+  namelist / test_data_override_nml / varname, gridname, testnum
  
-!#ifdef INTERNAL_FILE_NML
-!  read (input_nml_file, test_data_override_nml, iostat=io)
-!  ierr = check_nml_error(io, 'test_data_override_nml')
-!#else
-!  if (file_exist('input.nml')) then
-!    unit = open_namelist_file ( )
-!    ierr=1
-!    do while (ierr /= 0)
-!      read(unit, nml=test_data_override_nml, iostat=io, end=10)
+!      read (input_nml_file, test_data_override_nml, iostat=io)
 !      ierr = check_nml_error(io, 'test_data_override_nml')
-!    enddo
-!10 call close_file (unit)
-!  endif
-!#endif
+  if (file_exist('input.nml')) then
+    unit = open_namelist_file ( )
+    ierr=1
+    do while (ierr /= 0)
+      read(unit, nml=test_data_override_nml, iostat=io, end=10)
+!      ierr = check_nml_error(io, 'test_data_override_nml')
+    enddo
+10 call close_file (unit)
+  endif
 
+  print *, varname, gridname, "varname / gridname"
   call fms_init
 
   call get_nlon_nlat(tile_file, grid_file, nlon, nlat)
@@ -109,18 +103,9 @@ program test
 
   nx_win = nx_dom/window(1)
   ny_win = ny_dom/window(2)
-  allocate(is_win(nwindows), js_win(nwindows))
-
-  i = 1
-  do jsw = js,je,ny_win
-    do isw = is,ie,nx_win
-      is_win(i) = isw
-      js_win(i) = jsw
-      i = i + 1
-    end do
-  end do
 
   vardo = construct_data_override_variable(gridname, varname, nwindows)
+  call print_before_sums(vardo)
 
 !$ call omp_set_num_threads(nthreads)
 !$OMP PARALLEL
@@ -129,15 +114,14 @@ program test
 
 !$OMP parallel do schedule(static) default(shared) private(isw, iew, jsw, jew)
   do n = 1, nwindows
-    isw = is_win(n)
+    isw = nx_win*mod(n-1,window(1)) + is
     iew = isw + nx_win - 1
-    jsw = js_win(n)
+    jsw = ny_win*((n-1)/window(1)) + js
     jew = jsw + ny_win - 1
     call data_override(vardo%grid, trim(vardo%varname), vardo%array(isw:iew,jsw:jew), Time, override=vardo%override(n), &
                       is_in=isw-is+1, ie_in=iew-is+1, js_in=jsw-js+1, je_in=jew-js+1)
   enddo
 
-  call print_before_sums(vardo)
   call check_override_fails(vardo)
   call calc_after_sum(vardo)
   call print_after_sums(vardo)
@@ -205,7 +189,6 @@ contains
       message = 'override failed for '//trim(vardo%varname)
       call error_mesg('test_data_override', trim(message), FATAL)
     endif
-    print *, message
   end subroutine check_override_fails
 
   subroutine send_data_data_override

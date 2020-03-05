@@ -19,7 +19,7 @@
 
 
 module time_interp_external2_mod
-!#include  <fms_platform.h>
+#include  <fms_platform.h>
 !
 !<CONTACT EMAIL="Matthew.Harrison@noaa.gov">M.J. Harrison</CONTACT>
 !
@@ -47,7 +47,6 @@ module time_interp_external2_mod
 ! </DATA>
 !</NAMELIST>
 
-  use platform_mod, only: r8_kind
   use fms_mod, only : write_version_number
   use mpp_mod, only : mpp_error,FATAL,WARNING,mpp_pe, stdout, stdlog, NOTE
   use mpp_mod, only : input_nml_file
@@ -111,7 +110,7 @@ module time_interp_external2_mod
      type(valid_t) :: valid ! data validator
      integer :: nbuf
      logical :: domain_present
-     real(8) :: slope, intercept
+     real(DOUBLE_KIND) :: slope, intercept
      integer :: isc,iec,jsc,jec
      type(time_type) :: modulo_time_beg, modulo_time_end
      logical :: have_modulo_times, correct_leap_year_inconsistency
@@ -142,7 +141,7 @@ module time_interp_external2_mod
 !Balaji: really should use field%missing
   integer, private, parameter :: dk = r8_kind ! ensures that time_interp_missing is in range for mixed-mode 
                                                   ! compiling
-  real(8), private, parameter :: time_interp_missing=-1e99_dk
+  real(DOUBLE_KIND), private, parameter :: time_interp_missing=-1e99_dk
   contains
 
 ! <SUBROUTINE NAME="time_interp_external_init">
@@ -243,7 +242,7 @@ module time_interp_external2_mod
 
       integer :: init_external_field
 
-      real(8) :: slope, intercept
+      real(DOUBLE_KIND) :: slope, intercept
       integer :: unit,ndim,nvar,natt,ntime,i,j
       integer :: iscomp,iecomp,jscomp,jecomp,isglobal,ieglobal,jsglobal,jeglobal
       integer :: isdata,iedata,jsdata,jedata, dxsize, dysize,dxsize_max,dysize_max
@@ -730,7 +729,6 @@ module time_interp_external2_mod
       integer :: nx, ny, nz, interp_method, t1, t2
       integer :: i1, i2, isc, iec, jsc, jec, mod_time
       integer :: yy, mm, dd, hh, min, ss
-      real, dimension(:,:), allocatable :: my_level1_data, my_level2_data
       character(len=256) :: err_msg, filename
 
       integer :: isw, iew, jsw, jew, nxw, nyw
@@ -842,9 +840,7 @@ module time_interp_external2_mod
          endif
 
          call load_record(field(index),t1,horz_interp, is_in, ie_in ,js_in, je_in, window_id)
-         print *, "Sum after load record 1", SUM(field(index)%data)
          call load_record(field(index),t2,horz_interp, is_in, ie_in ,js_in, je_in, window_id)
-         print *, "Sum after load record 2", SUM(field(index)%data)
          i1 = find_buf_index(t1,field(index)%ibuf)
          i2 = find_buf_index(t2,field(index)%ibuf)
          if(i1<0.or.i2<0) &
@@ -856,13 +852,13 @@ module time_interp_external2_mod
          endif
 
          if( field(index)%region_type == NO_REGION ) then
-!            where(field(index)%mask(isc:iec,jsc:jec,:,i1).and.field(index)%mask(isc:iec,jsc:jec,:,i2))
+            where(field(index)%mask(isc:iec,jsc:jec,:,i1).and.field(index)%mask(isc:iec,jsc:jec,:,i2))
                data(isw:iew,jsw:jew,:) = field(index)%data(isc:iec,jsc:jec,:,i1)*w1 + &
                     field(index)%data(isc:iec,jsc:jec,:,i2)*w2
-!            elsewhere
+            elsewhere
 !               data(isw:iew,jsw:jew,:) = time_interp_missing !field(index)%missing? Balaji
-!               data(isw:iew,jsw:jew,:) = field(index)%missing
-!            end where
+               data(isw:iew,jsw:jew,:) = field(index)%missing
+            end where
          else
             where(field(index)%mask(isc:iec,jsc:jec,:,i1).and.field(index)%mask(isc:iec,jsc:jec,:,i2))
                data(isw:iew,jsw:jew,:) = field(index)%data(isc:iec,jsc:jec,:,i1)*w1 + &
@@ -874,31 +870,6 @@ module time_interp_external2_mod
                                         field(index)%mask(isc:iec,jsc:jec,:,i1).and.&
                                         field(index)%mask(isc:iec,jsc:jec,:,i2)
       endif
-      print *, "i1, i2, t1, t2", i1, i2, t1, t2
-      print *, "isc, iec, jsc, jec, isw, iew, jsw, jew", isc, iec, jsc, jec, isw, iew, jsw, jew
-!      allocate(my_level1_data(isc:iec,jsc:jec))
-!      allocate(my_level2_data(isc:iec,jsc:jec))
-!      my_level1_data = field(index)%data(isc:iec,jsc:jec,1,i1)
-!      my_level2_data = field(index)%data(isc:iec,jsc:jec,1,i2)
-!      print *, "Sum of Field Data 1", field(index)%name, SUM(my_level1_data)
-!      print *, "Sum of Field Data 2", field(index)%name, SUM(my_level2_data)
-!      print *, "Max of Field Data 1", field(index)%name, MAXVAL(my_level1_data)
-!      print *, "Max of Field Data 2", field(index)%name, MAXVAL(my_level2_data)
-!      print *, "Min of Field Data 1", field(index)%name, MINVAL(my_level1_data)
-!      print *, "Min of Field Data 2", field(index)%name, MINVAL(my_level2_data)
-!      my_level1_data = w1 * my_level1_data
-!      my_level2_data = w2 * my_level2_data
-!      print *, "Sum of Weighted Field Data 1", field(index)%name, SUM(my_level1_data)
-!      print *, "Sum of Weighted Field Data 2", field(index)%name, SUM(my_level2_data)
-!      print *, "Max of Weighted Field Data 1", field(index)%name, MAXVAL(my_level1_data)
-!      print *, "Max of Weighted Field Data 2", field(index)%name, MAXVAL(my_level2_data)
-!      print *, "Min of Weighted Field Data 1", field(index)%name, MINVAL(my_level1_data)
-!      print *, "Min of Weighted Field Data 2", field(index)%name, MINVAL(my_level2_data)
-!      deallocate(my_level1_data)
-!      deallocate(my_level2_data)
-      print *, "Sum of Partial Data", field(index)%name, SUM(data(isw:iew,jsw:jew,:))
-      print *, "Sum of Data", field(index)%name, SUM(data)
-      print *, "Data", field(index)%name, data
 
     end subroutine time_interp_external_3d
 !</SUBROUTINE> NAME="time_interp_external"
@@ -1039,8 +1010,6 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
      call read_data(field%fileobj,field%name,field%src_data(:,:,:,ib),corner=start,edge_lengths=nread)
   endif
 !$OMP END CRITICAL
-  print *, "Source Data Sum "//field%name, SUM(field%src_data(:,:,:,ib))
-  print *, "Source Data Sum All Time Buffs " //field%name, SUM(field%src_data)
   isw=field%isc;iew=field%iec
   jsw=field%jsc;jew=field%jec
 
@@ -1062,11 +1031,7 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
         is_region = field%is_region; ie_region = field%ie_region
         js_region = field%js_region; je_region = field%je_region
         mask_in = 0.0
-!        print *, "src_data", field%src_data(:,:,:,ib)
         where (is_valid(field%src_data(:,:,:,ib), field%valid)) mask_in = 1.0
-        print *, "mask_in sum", SUM(mask_in)
-        print *, "mask_in max", MAXVAL(mask_in)
-        print *, "mask_in min", MINVAL(mask_in)
         if ( field%region_type .NE. NO_REGION ) then
            if( ANY(mask_in == 0.0) ) then
               call mpp_error(FATAL, "time_interp_external: mask_in should be all 1 when region_type is not NO_REGION")
@@ -1090,11 +1055,6 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
              mask_in=mask_in, &
              mask_out=mask_out)
 
-        print *, "mask_out sum", SUM(mask_out)
-        print *, "mask_out max", MAXVAL(mask_out)
-        print *, "mask_out min", MINVAL(mask_out)
-        print *, "Interp Data Partial Sum", field%name, SUM(field%data(isw:iew,jsw:jew,:,ib))
-        print *, "Interp Data Sum", field%name, SUM(field%data)
         field%mask(isw:iew,jsw:jew,:,ib) = mask_out(isw:iew,jsw:jew,:) > 0
         deallocate(mask_out)
         field%need_compute(ib, window_id) = .false.
