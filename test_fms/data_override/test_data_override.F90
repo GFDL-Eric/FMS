@@ -20,8 +20,10 @@
 program test
 
   use           fms_mod, only: fms_init, fms_end, check_nml_error, open_namelist_file
-  use           fms_mod, only: error_mesg, field_exist, field_size, close_file
-  use        fms_io_mod, only: read_data, fms_io_exit, file_exist
+  use           fms_mod, only: error_mesg, field_exist, close_file => close_nml_file
+  use        fms_io_mod, only: fms_io_exit, file_exist
+  use       fms2_io_mod, only: open_file, close_file, read_data
+  use       fms2_io_mod, only: variable_exists, get_variable_size, FmsNetcdfFile_t
   use  fms_affinity_mod, only: fms_affinity_set
   use  time_manager_mod, only: time_type, set_date, set_calendar_type, NOLEAP
   use  diag_manager_mod, only: diag_manager_init, diag_manager_end, register_static_field, register_diag_field
@@ -44,6 +46,12 @@ program test
     logical, allocatable :: override(:)
   end type dataOverrideVariable_t
 
+  type gridStyle_t
+    character(len=32)     :: gridstyle
+    character(len=16)     :: var
+    type(FmsNetcdfFile_t) :: obj
+  end type gridStyle_t
+
   integer                           :: nthreads=1
   character(len=256)                :: varname='sst_obs'
   character(len=3)                  :: gridname='OCN'
@@ -60,6 +68,7 @@ program test
   integer                           :: window(2) = (/1,1/)
   integer                           :: nwindows, testnum
   type(dataOverrideVariable_t)      :: vardo
+  type(gridStyle_t)                 :: my_grid
   namelist / test_data_override_nml / varname, gridname, testnum
  
 !      read (input_nml_file, test_data_override_nml, iostat=io)
@@ -71,13 +80,14 @@ program test
       read(unit, nml=test_data_override_nml, iostat=io, end=10)
 !      ierr = check_nml_error(io, 'test_data_override_nml')
     enddo
-10 call close_file (unit)
+10 call close_nml_file (unit)
   endif
 
   print *, varname, gridname, "varname / gridname"
   call fms_init
 
-  call get_nlon_nlat(tile_file, grid_file, nlon, nlat)
+  my_grid = get_grid_style()
+  call get_nlon_nlat(nlon, nlat, my_grid)
 
   if(layout(1)*layout(2) .NE. mpp_npes() ) then
     call mpp_define_layout( (/1,nlon,1,nlat/), mpp_npes(), layout )
@@ -130,7 +140,7 @@ program test
   call send_data_data_override
 
   call destruct_data_override_variable(vardo)
-
+  close_file(my_grid%obj)
   call fms_io_exit
   call fms_end
 
@@ -221,43 +231,72 @@ contains
     call diag_manager_end(Time)
 
   end subroutine send_data_data_override 
-  subroutine get_nlon_nlat(tile_file, grid_file, nlon, nlat, grid_file_name)
-    character(len=128), intent(in), optional :: grid_file_name
-    character(len=256), intent(out)          :: tile_file, grid_file
-    integer, intent(out)                     :: nlon, nlat
-    character(len=256)                       :: solo_mosaic_file
-    integer, dimension(4)                    :: siz
+
+  pure function get_obj(file_name)
+    character(len=128), intent(in) :: file_name
+    type(FmsNetcdfFile_t)          :: get_obj
+    if(.not. open_file(get_obj, grid_file, 'read')) then
+      call mpp_error(FATAL, 'test_data_override(get_obj):Error in opening file '//trim(file_name))
+    endif
+  end function get_obj
+
+  pure function get_grid_style(grid_file_name)
+    character(len=128), intent(in), optional     :: grid_file_name
+    type(gridStyle_t)                            :: get_grid_style
+    type(FmsNetcdfFile_t)                        :: gridobj, mosaicobj, tileobj
+    character(len=256)                           :: solo_mosaic_file, tile_file
+    integer, dimension(4)                        :: siz
 
     if (.not. present(grid_file_name)) then
       grid_file = "INPUT/grid_spec.nc"
     else
       grid_file = trim(grid_file_name)
     end if
-    if(field_exist(grid_file, "x_T" ) ) then
-      call field_size(grid_file, 'x_T', siz)
-      nlon = siz(1)
-      nlat = siz(2)
-      tile_file = repeat(' ',len(tile_file))
-    else if(field_exist(grid_file, "geolon_t" ) ) then
-      call field_size(grid_file, 'geolon_t', siz)
-      nlon = siz(1)-1
-      nlat = siz(2)-1
-      tile_file = repeat(' ',len(tile_file))
-    else if (field_exist(grid_file, "ocn_mosaic_file" )) then
-      call read_data(grid_file, 'ocn_mosaic_file', solo_mosaic_file)
+    gridobj = get_obj(grid_file)
+    if(variable_exists(gridobj, "x_T")) then
+      my_grid%gridstyle = 'x_T'
+      my_grid%obj = gridobj
+      my_grid%var = 'x_T'
+    else if(variable_exists(gridobj, "geolon_t")) then
+      my_grid%gridstyle = 'geolon_t'
+      my_grid%obj = gridobj
+      my_grid%var = 'geolon_t'
+    else if(variable_exists(gridobj, "ocn_mosaic_file")) then
+      call read_data(gridobj, 'ocn_mosaic_file', solo_mosaic_file)
       solo_mosaic_file = 'INPUT/'//trim(solo_mosaic_file)
-      call field_size(solo_mosaic_file, 'gridfiles', siz)
+      mosaicobj = get_obj(solo_mosaic_file)
+      call get_variable_size(mosaicobj, 'gridfiles', siz)
       if( siz(2) .NE. 1) call error_mesg('test_data_override', 'only support single tile mosaic, contact developer', FATAL)
-      call read_data(solo_mosaic_file, 'gridfiles', tile_file)
+      call read_data(mosaicobj, 'gridfiles', tile_file)
+      close_file(mosaicobj)
       tile_file = 'INPUT/'//trim(tile_file)
-      call field_size(tile_file, 'area', siz)
-      if(mod(siz(1),2) .NE. 0 .OR. mod(siz(2),2) .NE. 0 ) then
-        call error_mesg('test_data_override',"test_data_override: supergrid size can not be divided by 2", FATAL)
-      end if
-      nlon = siz(1)/2
-      nlat = siz(2)/2
+      tileobj = get_obj(tile_file)
+      my_grid%gridstyle = 'ocn_mosaic_file'
+      my_grid%obj = tileobj
+      my_grid%var = 'area'
+      close(gridobj)
     else
       call error_mesg('test_data_override', 'x_T, geolon_t and ocn_mosaic_file does not exist', FATAL)
+    end if
+  end subroutine get_grid_style
+
+  subroutine get_nlon_nlat(nlon, nlat, mygrid)
+    type(gridStyle_t), intent(inout)            :: my_grid
+    integer, intent(out)                        :: nlon, nlat
+    integer, dimension(4)                       :: siz
+
+    call get_variable_size(my_grid%obj, trim(my_grid%var), siz)
+    nlon = siz(1)
+    nlat = siz(2)
+    if(trim(my_grid%gridstyle) == "geolon_t") then
+      nlon = nlon-1
+      nlat = nlat-1
+    else if(trim(my_grid%gridstyle) == "ocn_mosaic_file") then
+      if(mod(nlon,2) .NE. 0 .OR. mod(nlat,2) .NE. 0) then
+        call error_mesg('test_data_override',"test_data_override: supergrid size can not be divided by 2", FATAL)
+      end if
+      nlon = nlon/2
+      nlat = nlat/2
     end if
   end subroutine get_nlon_nlat
 
@@ -266,18 +305,18 @@ contains
     real, allocatable, dimension(:,:)   :: lon_global, lat_global
     character(len=128) :: message
 
-    if(field_exist(grid_file, 'x_T')) then
+    if(trim(my_grid%gridstyle) == "x_T") then
       allocate(lon_vert_glo(nlon,nlat,4), lat_vert_glo(nlon,nlat,4) )
       allocate(lon_global  (nlon,nlat  ), lat_global  (nlon,nlat  ) )
-      call read_data(trim(grid_file), 'x_vert_T', lon_vert_glo, no_domain=.true.)
-      call read_data(trim(grid_file), 'y_vert_T', lat_vert_glo, no_domain=.true.)
+      call read_data(my_grid%obj, 'x_vert_T', lon_vert_glo)
+      call read_data(my_grid%obj, 'y_vert_T', lat_vert_glo)
       lon_global(:,:)  = (lon_vert_glo(:,:,1) + lon_vert_glo(:,:,2) + lon_vert_glo(:,:,3) + lon_vert_glo(:,:,4))*0.25
       lat_global(:,:) =  (lat_vert_glo(:,:,1) + lat_vert_glo(:,:,2) + lat_vert_glo(:,:,3) + lat_vert_glo(:,:,4))*0.25
-    else if(field_exist(grid_file, "geolon_t")) then
+    else if(trim(my_grid%gridstyle) == "geolon_t") then
       allocate(lon_vert_glo(nlon+1,nlat+1,1), lat_vert_glo(nlon+1,nlat+1,1))
       allocate(lon_global  (nlon,  nlat    ), lat_global  (nlon,  nlat    ))
-      call read_data(trim(grid_file), 'geolon_vert_t', lon_vert_glo, no_domain=.true.)
-      call read_data(trim(grid_file), 'geolat_vert_t', lat_vert_glo, no_domain=.true.)
+      call read_data(my_grid%obj, 'geolon_vert_t', lon_vert_glo)
+      call read_data(my_grid%obj, 'geolat_vert_t', lat_vert_glo)
 
       do i = 1, nlon
         do j = 1, nlat
@@ -287,11 +326,11 @@ contains
             lat_vert_glo(i+1,j+1,1) + lat_vert_glo(i,j+1,1))*0.25
         enddo
       enddo
-    else if(field_exist(grid_file, "ocn_mosaic_file")) then
+    else if(trim(my_grid%gridstyle) == "ocn_mosaic_file") then
       allocate(lon_vert_glo(nlon*2+1,nlat*2+1,1), lat_vert_glo(nlon*2+1,nlat*2+1,1))
       allocate(lon_global  (nlon,  nlat    ), lat_global  (nlon,  nlat    ))
-      call read_data( tile_file, 'x', lon_vert_glo, no_domain=.true.)
-      call read_data( tile_file, 'y', lat_vert_glo, no_domain=.true.)
+      call read_data(my_grid%obj, 'x', lon_vert_glo)
+      call read_data(my_grid%obj, 'y', lat_vert_glo)
       do j = 1, nlat
         do i = 1, nlon
           lon_global(i,j) = lon_vert_glo(i*2,j*2,1)
