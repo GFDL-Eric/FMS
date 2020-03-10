@@ -148,7 +148,7 @@ program test
 
 contains
 
-  pure function construct_data_override_variable(gridname, varname, nwindows) result(vardo)
+  function construct_data_override_variable(gridname, varname, nwindows) result(vardo)
     character(len=*), intent(in) :: gridname
     character(len=*), intent(in) :: varname
     integer, intent(in)          :: nwindows
@@ -242,7 +242,7 @@ contains
     endif
   end function get_obj
 
-  pure function get_grid_style(grid_file_name)
+  function get_grid_style(grid_file_name)
     character(len=128), intent(in), optional     :: grid_file_name
     type(gridStyle_t)                            :: get_grid_style
     type(FmsNetcdfFile_t)                        :: gridobj, mosaicobj, tileobj
