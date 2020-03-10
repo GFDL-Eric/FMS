@@ -52,6 +52,10 @@ program test
     character(len=32)     :: gridstyle
     character(len=16)     :: var
     type(FmsNetcdfFile_t) :: obj
+    integer               :: nlon
+    integer               :: nlat
+    contains
+      procedure           :: get_nlat_nlon
   end type gridStyle_t
 
   integer                           :: nthreads=1
@@ -61,7 +65,6 @@ program test
   integer                           :: isw, iew, jsw, jew
   integer                           :: nx_dom, ny_dom, nx_win, ny_win
   type(domain2d)                    :: Domain
-  integer                           :: nlon, nlat
   real, allocatable, dimension(:,:) :: lon, lat
   integer                           :: i, j, is, ie, js, je, io, ierr, n, unit
   character(len=256)                :: tile_file, grid_file
@@ -89,13 +92,13 @@ program test
   call fms_init
 
   my_grid = get_grid_style()
-  call get_nlon_nlat(nlon, nlat)
+  my_grid%get_nlon_nlat
 
   if(layout(1)*layout(2) .NE. mpp_npes() ) then
-    call mpp_define_layout( (/1,nlon,1,nlat/), mpp_npes(), layout )
+    call mpp_define_layout( (/1,my_grid%nlon,1,my_grid%nlat/), mpp_npes(), layout )
   end if
  
-  call mpp_define_domains( (/1,nlon,1,nlat/), layout, Domain, name='test_data_override')
+  call mpp_define_domains( (/1,my_grid%nlon,1,my_grid%nlat/), layout, Domain, name='test_data_override')
   call mpp_define_io_domain(Domain, (/1,1/))
   call data_override_init(Ice_domain_in=Domain, Ocean_domain_in=Domain)
   call mpp_get_compute_domain(Domain, is, ie, js, je)
@@ -209,12 +212,12 @@ contains
     logical                           :: used
 
     call diag_manager_init
-    allocate(x(nlon), y(nlat))
+    allocate(x(my_grid%nlon), y(my_grid%nlat))
    
-    do i=1,nlon
+    do i=1,my_grid%nlon
       x(i) = i
     enddo
-    do j=1,nlat
+    do j=1,my_grid%nlat
       y(j) = j
     enddo
   
@@ -282,22 +285,21 @@ contains
     end if
   end function get_grid_style
 
-  subroutine get_nlon_nlat(nlon, nlat)
-    integer, intent(out)                        :: nlon, nlat
-    integer, dimension(2)                       :: siz
+  subroutine get_nlon_nlat
+    integer, dimension(2) :: siz
 
     call get_variable_size(my_grid%obj, trim(my_grid%var), siz)
-    nlon = siz(1)
-    nlat = siz(2)
+    my_grid%nlon = siz(1)
+    my_grid%nlat = siz(2)
     if(trim(my_grid%gridstyle) == "geolon_t") then
-      nlon = nlon-1
-      nlat = nlat-1
+      my_grid%nlon = my_grid%nlon-1
+      my_grid%nlat = my_grid%nlat-1
     else if(trim(my_grid%gridstyle) == "ocn_mosaic_file") then
-      if(mod(nlon,2) .NE. 0 .OR. mod(nlat,2) .NE. 0) then
+      if(mod(my_grid%nlon,2) .NE. 0 .OR. mod(my_grid%nlat,2) .NE. 0) then
         call error_mesg('test_data_override',"test_data_override: supergrid size can not be divided by 2", FATAL)
       end if
-      nlon = nlon/2
-      nlat = nlat/2
+      my_grid%nlon = my_grid%nlon/2
+      my_grid%nlat = my_grid%nlat/2
     end if
   end subroutine get_nlon_nlat
 
@@ -307,20 +309,20 @@ contains
     character(len=128) :: message
 
     if(trim(my_grid%gridstyle) == "x_T") then
-      allocate(lon_vert_glo(nlon,nlat,4), lat_vert_glo(nlon,nlat,4) )
-      allocate(lon_global  (nlon,nlat  ), lat_global  (nlon,nlat  ) )
+      allocate(lon_vert_glo(my_grid%nlon,my_grid%nlat,4), lat_vert_glo(my_grid%nlon,my_grid%nlat,4) )
+      allocate(lon_global  (my_grid%nlon,my_grid%nlat  ), lat_global  (my_grid%nlon,my_grid%nlat  ) )
       call read_data(my_grid%obj, 'x_vert_T', lon_vert_glo)
       call read_data(my_grid%obj, 'y_vert_T', lat_vert_glo)
       lon_global(:,:)  = (lon_vert_glo(:,:,1) + lon_vert_glo(:,:,2) + lon_vert_glo(:,:,3) + lon_vert_glo(:,:,4))*0.25
       lat_global(:,:) =  (lat_vert_glo(:,:,1) + lat_vert_glo(:,:,2) + lat_vert_glo(:,:,3) + lat_vert_glo(:,:,4))*0.25
     else if(trim(my_grid%gridstyle) == "geolon_t") then
-      allocate(lon_vert_glo(nlon+1,nlat+1,1), lat_vert_glo(nlon+1,nlat+1,1))
-      allocate(lon_global  (nlon,  nlat    ), lat_global  (nlon,  nlat    ))
+      allocate(lon_vert_glo(my_grid%nlon+1,my_grid%nlat+1,1), lat_vert_glo(my_grid%nlon+1,my_grid%nlat+1,1))
+      allocate(lon_global  (my_grid%nlon,  my_grid%nlat    ), lat_global  (my_grid%nlon,  my_grid%nlat    ))
       call read_data(my_grid%obj, 'geolon_vert_t', lon_vert_glo)
       call read_data(my_grid%obj, 'geolat_vert_t', lat_vert_glo)
 
-      do i = 1, nlon
-        do j = 1, nlat
+      do i = 1, my_grid%nlon
+        do j = 1, my_grid%nlat
           lon_global(i,j) = (lon_vert_glo(i,j,1) + lon_vert_glo(i+1,j,1) + &
             lon_vert_glo(i+1,j+1,1) + lon_vert_glo(i,j+1,1))*0.25
           lat_global(i,j) = (lat_vert_glo(i,j,1) + lat_vert_glo(i+1,j,1) + &
@@ -328,12 +330,12 @@ contains
         enddo
       enddo
     else if(trim(my_grid%gridstyle) == "ocn_mosaic_file") then
-      allocate(lon_vert_glo(nlon*2+1,nlat*2+1,1), lat_vert_glo(nlon*2+1,nlat*2+1,1))
-      allocate(lon_global  (nlon,  nlat    ), lat_global  (nlon,  nlat    ))
+      allocate(lon_vert_glo(my_grid%nlon*2+1,my_grid%nlat*2+1,1), lat_vert_glo(my_grid%nlon*2+1,my_grid%nlat*2+1,1))
+      allocate(lon_global  (my_grid%nlon,  my_grid%nlat    ), lat_global  (my_grid%nlon,  my_grid%nlat    ))
       call read_data(my_grid%obj, 'x', lon_vert_glo)
       call read_data(my_grid%obj, 'y', lat_vert_glo)
-      do j = 1, nlat
-        do i = 1, nlon
+      do j = 1, my_grid%nlat
+        do i = 1, my_grid%nlon
           lon_global(i,j) = lon_vert_glo(i*2,j*2,1)
           lat_global(i,j) = lat_vert_glo(i*2,j*2,1)
         end do
