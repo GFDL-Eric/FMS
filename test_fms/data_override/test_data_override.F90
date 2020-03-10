@@ -20,9 +20,11 @@
 program test
 
   use           fms_mod, only: fms_init, fms_end, check_nml_error, open_namelist_file
-  use           fms_mod, only: error_mesg, field_exist, close_file => close_nml_file
+  use           fms_mod, only: error_mesg, field_exist
+  use           fms_mod, only: close_nml_file => close_file
   use        fms_io_mod, only: fms_io_exit, file_exist
-  use       fms2_io_mod, only: open_file, close_file, read_data
+  use       fms2_io_mod, only: open_file, read_data
+  use       fms2_io_mod, only: close_file2 => close_file
   use       fms2_io_mod, only: variable_exists, get_variable_size, FmsNetcdfFile_t
   use  fms_affinity_mod, only: fms_affinity_set
   use  time_manager_mod, only: time_type, set_date, set_calendar_type, NOLEAP
@@ -140,7 +142,7 @@ program test
   call send_data_data_override
 
   call destruct_data_override_variable(vardo)
-  close_file(my_grid%obj)
+  call close_file2(my_grid%obj)
   call fms_io_exit
   call fms_end
 
@@ -268,19 +270,19 @@ contains
       call get_variable_size(mosaicobj, 'gridfiles', siz)
       if( siz(2) .NE. 1) call error_mesg('test_data_override', 'only support single tile mosaic, contact developer', FATAL)
       call read_data(mosaicobj, 'gridfiles', tile_file)
-      close_file(mosaicobj)
+      call close_file2(mosaicobj)
       tile_file = 'INPUT/'//trim(tile_file)
       tileobj = get_obj(tile_file)
       my_grid%gridstyle = 'ocn_mosaic_file'
       my_grid%obj = tileobj
       my_grid%var = 'area'
-      close(gridobj)
+      call close_file2(gridobj)
     else
       call error_mesg('test_data_override', 'x_T, geolon_t and ocn_mosaic_file does not exist', FATAL)
     end if
   end subroutine get_grid_style
 
-  subroutine get_nlon_nlat(nlon, nlat, mygrid)
+  subroutine get_nlon_nlat(nlon, nlat, my_grid)
     type(gridStyle_t), intent(inout)            :: my_grid
     integer, intent(out)                        :: nlon, nlat
     integer, dimension(4)                       :: siz
