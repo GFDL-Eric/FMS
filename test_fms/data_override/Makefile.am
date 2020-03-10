@@ -7,6 +7,7 @@
 AM_CPPFLAGS = -I${top_srcdir}/include \
   -I${top_builddir}/mpp \
   -I${top_builddir}/fms \
+  -I${top_builddir}/fms2_io \
   -I${top_builddir}/affinity \
   -I${top_builddir}/constants \
   -I${top_builddir}/time_manager \
