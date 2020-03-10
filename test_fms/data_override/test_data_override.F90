@@ -89,7 +89,7 @@ program test
   call fms_init
 
   my_grid = get_grid_style()
-  call get_nlon_nlat(nlon, nlat, my_grid)
+  call get_nlon_nlat(nlon, nlat)
 
   if(layout(1)*layout(2) .NE. mpp_npes() ) then
     call mpp_define_layout( (/1,nlon,1,nlat/), mpp_npes(), layout )
@@ -120,9 +120,9 @@ program test
   call print_before_sums(vardo)
 
 !$ call omp_set_num_threads(nthreads)
-!$OMP PARALLEL
-!$ call fms_affinity_set("test_data_override", .FALSE., omp_get_num_threads() )
-!$OMP END PARALLEL
+!!! !$OMP PARALLEL
+!!! !$ call fms_affinity_set("test_data_override", .FALSE., omp_get_num_threads() )
+!!! !$OMP END PARALLEL
 
 !$OMP parallel do schedule(static) default(shared) private(isw, iew, jsw, jew)
   do n = 1, nwindows
@@ -234,20 +234,20 @@ contains
 
   end subroutine send_data_data_override 
 
-  pure function get_obj(file_name)
+  function get_obj(file_name)
     character(len=128), intent(in) :: file_name
     type(FmsNetcdfFile_t)          :: get_obj
-    if(.not. open_file(get_obj, grid_file, 'read')) then
+    if(.not. open_file(get_obj, file_name, 'read')) then
       call mpp_error(FATAL, 'test_data_override(get_obj):Error in opening file '//trim(file_name))
     endif
   end function get_obj
 
-  function get_grid_style(grid_file_name)
+  function get_grid_style(grid_file_name) result(my_grid)
     character(len=128), intent(in), optional     :: grid_file_name
-    type(gridStyle_t)                            :: get_grid_style
+    type(gridStyle_t)                            :: my_grid
     type(FmsNetcdfFile_t)                        :: gridobj, mosaicobj, tileobj
     character(len=256)                           :: solo_mosaic_file, tile_file
-    integer, dimension(4)                        :: siz
+    integer, dimension(2)                        :: grid_siz
 
     if (.not. present(grid_file_name)) then
       grid_file = "INPUT/grid_spec.nc"
@@ -267,25 +267,24 @@ contains
       call read_data(gridobj, 'ocn_mosaic_file', solo_mosaic_file)
       solo_mosaic_file = 'INPUT/'//trim(solo_mosaic_file)
       mosaicobj = get_obj(solo_mosaic_file)
-      call get_variable_size(mosaicobj, 'gridfiles', siz)
-      if( siz(2) .NE. 1) call error_mesg('test_data_override', 'only support single tile mosaic, contact developer', FATAL)
+      call get_variable_size(mosaicobj, 'gridfiles', grid_siz)
+      if( grid_siz(2) .NE. 1) call error_mesg('test_data_override', 'only support single tile mosaic, contact developer', FATAL)
       call read_data(mosaicobj, 'gridfiles', tile_file)
-      call close_file2(mosaicobj)
       tile_file = 'INPUT/'//trim(tile_file)
       tileobj = get_obj(tile_file)
       my_grid%gridstyle = 'ocn_mosaic_file'
       my_grid%obj = tileobj
       my_grid%var = 'area'
+      call close_file2(mosaicobj)
       call close_file2(gridobj)
     else
       call error_mesg('test_data_override', 'x_T, geolon_t and ocn_mosaic_file does not exist', FATAL)
     end if
-  end subroutine get_grid_style
+  end function get_grid_style
 
-  subroutine get_nlon_nlat(nlon, nlat, my_grid)
-    type(gridStyle_t), intent(inout)            :: my_grid
+  subroutine get_nlon_nlat(nlon, nlat)
     integer, intent(out)                        :: nlon, nlat
-    integer, dimension(4)                       :: siz
+    integer, dimension(2)                       :: siz
 
     call get_variable_size(my_grid%obj, trim(my_grid%var), siz)
     nlon = siz(1)
