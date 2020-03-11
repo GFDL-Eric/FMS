@@ -19,11 +19,15 @@
 
 module class_gridStyle
   use     fms_mod, only: error_mesg
-  use     mpp_mod, only: FATAL
+  use     mpp_mod, only: mpp_error, FATAL
   use fms2_io_mod, only: FmsNetcdfFile_t, get_variable_size
+  use fms2_io_mod, only: open_file, read_data, variable_exists
+  use fms2_io_mod, only: close_file2 => close_file
 
   implicit none
   private
+
+  integer                 :: i, j
 
   type, public :: gridStyle_t
     character(len=32)     :: gridstyle
@@ -31,10 +35,17 @@ module class_gridStyle
     type(FmsNetcdfFile_t) :: obj
     integer               :: nlon
     integer               :: nlat
+    real, allocatable     :: lon_global(:,:)
+    real, allocatable     :: lat_global(:,:)
     contains
-      procedure           :: get_nlon_nlat => calc_nlon_nlat
+      procedure           :: get_nlon_nlat    => calc_nlon_nlat
+      procedure           :: get_grid_globals => get_lonlat_globals
+      procedure           :: destruct         => destruct_grid_style
   end type gridStyle_t
 
+  interface gridStyle_t
+    module procedure construct_grid_style
+  end interface gridStyle_t
 contains
 
   subroutine calc_nlon_nlat(this)
@@ -55,6 +66,106 @@ contains
       this%nlat = this%nlat/2
     end if
   end subroutine calc_nlon_nlat
+
+  function get_obj(file_name)
+    character(len=128), intent(in) :: file_name
+    type(FmsNetcdfFile_t)          :: get_obj
+    if(.not. open_file(get_obj, file_name, 'read')) then
+      call mpp_error(FATAL, 'test_data_override(get_obj):Error in opening file '//trim(file_name))
+    endif
+  end function get_obj
+
+  function construct_grid_style(grid_file_name) result(this)
+    character(len=128), intent(in), optional     :: grid_file_name
+    type(gridStyle_t)                            :: this
+    type(FmsNetcdfFile_t)                        :: gridobj, mosaicobj, tileobj
+    character(len=256)                           :: solo_mosaic_file, tile_file, grid_file
+    integer, dimension(2)                        :: grid_siz
+
+    if (.not. present(grid_file_name)) then
+      grid_file = "INPUT/grid_spec.nc"
+    else
+      grid_file = trim(grid_file_name)
+    end if
+    gridobj = get_obj(grid_file)
+    if(variable_exists(gridobj, "x_T")) then
+      this%gridstyle = 'x_T'
+      this%obj = gridobj
+      this%var = 'x_T'
+    else if(variable_exists(gridobj, "geolon_t")) then
+      this%gridstyle = 'geolon_t'
+      this%obj = gridobj
+      this%var = 'geolon_t'
+    else if(variable_exists(gridobj, "ocn_mosaic_file")) then
+      call read_data(gridobj, 'ocn_mosaic_file', solo_mosaic_file)
+      solo_mosaic_file = 'INPUT/'//trim(solo_mosaic_file)
+      mosaicobj = get_obj(solo_mosaic_file)
+      call get_variable_size(mosaicobj, 'gridfiles', grid_siz)
+      if( grid_siz(2) .NE. 1) call error_mesg('test_data_override', 'only support single tile mosaic, contact developer', FATAL)
+      call read_data(mosaicobj, 'gridfiles', tile_file)
+      tile_file = 'INPUT/'//trim(tile_file)
+      tileobj = get_obj(tile_file)
+      this%gridstyle = 'ocn_mosaic_file'
+      this%obj = tileobj
+      this%var = 'area'
+      call close_file2(mosaicobj)
+      call close_file2(gridobj)
+    else
+      call error_mesg('test_data_override', 'x_T, geolon_t and ocn_mosaic_file does not exist', FATAL)
+    end if
+  end function construct_grid_style
+
+  subroutine destruct_grid_style(this)
+    class(gridStyle_t), intent(inout) :: this
+
+    call close_file2(this%obj)
+    deallocate(this%lon_global)
+    deallocate(this%lat_global)
+  end subroutine destruct_grid_style
+
+  subroutine get_lonlat_globals(this)
+    class(gridStyle_t), intent(inout)   :: this
+    real, allocatable, dimension(:,:,:) :: lon_vert_glo, lat_vert_glo
+
+    if(trim(this%gridstyle) == "x_T") then
+      allocate(lon_vert_glo(this%nlon, this%nlat,4), lat_vert_glo(this%nlon, this%nlat,4))
+      allocate(this%lon_global(this%nlon, this%nlat), this%lat_global(this%nlon, this%nlat))
+      call read_data(this%obj, 'x_vert_T', lon_vert_glo)
+      call read_data(this%obj, 'y_vert_T', lat_vert_glo)
+      this%lon_global(:,:) = (lon_vert_glo(:,:,1) + lon_vert_glo(:,:,2) + lon_vert_glo(:,:,3) + lon_vert_glo(:,:,4))*0.25
+      this%lat_global(:,:) = (lat_vert_glo(:,:,1) + lat_vert_glo(:,:,2) + lat_vert_glo(:,:,3) + lat_vert_glo(:,:,4))*0.25
+    else if(trim(this%gridstyle) == "geolon_t") then
+      allocate(lon_vert_glo(this%nlon+1, this%nlat+1, 1), lat_vert_glo(this%nlon+1, this%nlat+1,1))
+      allocate(this%lon_global(this%nlon, this%nlat), this%lat_global(this%nlon, this%nlat))
+      call read_data(this%obj, 'geolon_vert_t', lon_vert_glo)
+      call read_data(this%obj, 'geolat_vert_t', lat_vert_glo)
+
+      do i = 1, this%nlon
+        do j = 1, this%nlat
+          this%lon_global(i,j) = (lon_vert_glo(i,j,1) + lon_vert_glo(i+1,j,1) + &
+            lon_vert_glo(i+1,j+1,1) + lon_vert_glo(i,j+1,1))*0.25
+          this%lat_global(i,j) = (lat_vert_glo(i,j,1) + lat_vert_glo(i+1,j,1) + &
+            lat_vert_glo(i+1,j+1,1) + lat_vert_glo(i,j+1,1))*0.25
+        enddo
+      enddo
+    else if(trim(this%gridstyle) == "ocn_mosaic_file") then
+      allocate(lon_vert_glo(this%nlon*2+1, this%nlat*2+1, 1), lat_vert_glo(this%nlon*2+1, this%nlat*2+1, 1))
+      allocate(this%lon_global(this%nlon, this%nlat), this%lat_global(this%nlon, this%nlat))
+      call read_data(this%obj, 'x', lon_vert_glo)
+      call read_data(this%obj, 'y', lat_vert_glo)
+      do j = 1, this%nlat
+        do i = 1, this%nlon
+          this%lon_global(i,j) = lon_vert_glo(i*2,j*2,1)
+          this%lat_global(i,j) = lat_vert_glo(i*2,j*2,1)
+        end do
+      end do
+    end if
+
+    deallocate(lon_vert_glo)
+    deallocate(lat_vert_glo)
+
+  end subroutine get_lonlat_globals
+
 
 end module class_gridStyle
 
@@ -99,7 +210,6 @@ program test
   type(domain2d)                    :: Domain
   real, allocatable, dimension(:,:) :: lon, lat
   integer                           :: i, j, is, ie, js, je, io, ierr, n, unit
-  character(len=256)                :: tile_file, grid_file
   type(time_type)                   :: Time
   integer, dimension(2)             :: layout = (/0,0/)
   integer                           :: window(2) = (/1,1/)
@@ -123,8 +233,9 @@ program test
   print *, varname, gridname, "varname / gridname"
   call fms_init
 
-  my_grid = get_grid_style()
+  my_grid = gridStyle_t()
   call my_grid%get_nlon_nlat
+  call my_grid%get_grid_globals
 
   if(layout(1)*layout(2) .NE. mpp_npes() ) then
     call mpp_define_layout( (/1,my_grid%nlon,1,my_grid%nlat/), mpp_npes(), layout )
@@ -177,7 +288,7 @@ program test
   call send_data_data_override
 
   call destruct_data_override_variable(vardo)
-  call close_file2(my_grid%obj)
+  call my_grid%destruct
   call fms_io_exit
   call fms_end
 
@@ -240,7 +351,7 @@ contains
 
   subroutine send_data_data_override
     real, allocatable, dimension(:)   :: x, y
-    integer                           :: id_x, id_y, id_lon, id_lat, id_var1, id_var2, id_var3
+    integer                           :: id_x, id_y, id_lon, id_lat, id_var1
     logical                           :: used
 
     call diag_manager_init
@@ -269,101 +380,10 @@ contains
 
   end subroutine send_data_data_override 
 
-  function get_obj(file_name)
-    character(len=128), intent(in) :: file_name
-    type(FmsNetcdfFile_t)          :: get_obj
-    if(.not. open_file(get_obj, file_name, 'read')) then
-      call mpp_error(FATAL, 'test_data_override(get_obj):Error in opening file '//trim(file_name))
-    endif
-  end function get_obj
-
-  function get_grid_style(grid_file_name) result(my_grid)
-    character(len=128), intent(in), optional     :: grid_file_name
-    type(gridStyle_t)                            :: my_grid
-    type(FmsNetcdfFile_t)                        :: gridobj, mosaicobj, tileobj
-    character(len=256)                           :: solo_mosaic_file, tile_file
-    integer, dimension(2)                        :: grid_siz
-
-    if (.not. present(grid_file_name)) then
-      grid_file = "INPUT/grid_spec.nc"
-    else
-      grid_file = trim(grid_file_name)
-    end if
-    gridobj = get_obj(grid_file)
-    if(variable_exists(gridobj, "x_T")) then
-      my_grid%gridstyle = 'x_T'
-      my_grid%obj = gridobj
-      my_grid%var = 'x_T'
-    else if(variable_exists(gridobj, "geolon_t")) then
-      my_grid%gridstyle = 'geolon_t'
-      my_grid%obj = gridobj
-      my_grid%var = 'geolon_t'
-    else if(variable_exists(gridobj, "ocn_mosaic_file")) then
-      call read_data(gridobj, 'ocn_mosaic_file', solo_mosaic_file)
-      solo_mosaic_file = 'INPUT/'//trim(solo_mosaic_file)
-      mosaicobj = get_obj(solo_mosaic_file)
-      call get_variable_size(mosaicobj, 'gridfiles', grid_siz)
-      if( grid_siz(2) .NE. 1) call error_mesg('test_data_override', 'only support single tile mosaic, contact developer', FATAL)
-      call read_data(mosaicobj, 'gridfiles', tile_file)
-      tile_file = 'INPUT/'//trim(tile_file)
-      tileobj = get_obj(tile_file)
-      my_grid%gridstyle = 'ocn_mosaic_file'
-      my_grid%obj = tileobj
-      my_grid%var = 'area'
-      call close_file2(mosaicobj)
-      call close_file2(gridobj)
-    else
-      call error_mesg('test_data_override', 'x_T, geolon_t and ocn_mosaic_file does not exist', FATAL)
-    end if
-  end function get_grid_style
-
   subroutine get_grid
-    real, allocatable, dimension(:,:,:) :: lon_vert_glo, lat_vert_glo
-    real, allocatable, dimension(:,:)   :: lon_global, lat_global
-    character(len=128) :: message
-
-    if(trim(my_grid%gridstyle) == "x_T") then
-      allocate(lon_vert_glo(my_grid%nlon,my_grid%nlat,4), lat_vert_glo(my_grid%nlon,my_grid%nlat,4) )
-      allocate(lon_global  (my_grid%nlon,my_grid%nlat  ), lat_global  (my_grid%nlon,my_grid%nlat  ) )
-      call read_data(my_grid%obj, 'x_vert_T', lon_vert_glo)
-      call read_data(my_grid%obj, 'y_vert_T', lat_vert_glo)
-      lon_global(:,:)  = (lon_vert_glo(:,:,1) + lon_vert_glo(:,:,2) + lon_vert_glo(:,:,3) + lon_vert_glo(:,:,4))*0.25
-      lat_global(:,:) =  (lat_vert_glo(:,:,1) + lat_vert_glo(:,:,2) + lat_vert_glo(:,:,3) + lat_vert_glo(:,:,4))*0.25
-    else if(trim(my_grid%gridstyle) == "geolon_t") then
-      allocate(lon_vert_glo(my_grid%nlon+1,my_grid%nlat+1,1), lat_vert_glo(my_grid%nlon+1,my_grid%nlat+1,1))
-      allocate(lon_global  (my_grid%nlon,  my_grid%nlat    ), lat_global  (my_grid%nlon,  my_grid%nlat    ))
-      call read_data(my_grid%obj, 'geolon_vert_t', lon_vert_glo)
-      call read_data(my_grid%obj, 'geolat_vert_t', lat_vert_glo)
-
-      do i = 1, my_grid%nlon
-        do j = 1, my_grid%nlat
-          lon_global(i,j) = (lon_vert_glo(i,j,1) + lon_vert_glo(i+1,j,1) + &
-            lon_vert_glo(i+1,j+1,1) + lon_vert_glo(i,j+1,1))*0.25
-          lat_global(i,j) = (lat_vert_glo(i,j,1) + lat_vert_glo(i+1,j,1) + &
-            lat_vert_glo(i+1,j+1,1) + lat_vert_glo(i,j+1,1))*0.25
-        enddo
-      enddo
-    else if(trim(my_grid%gridstyle) == "ocn_mosaic_file") then
-      allocate(lon_vert_glo(my_grid%nlon*2+1,my_grid%nlat*2+1,1), lat_vert_glo(my_grid%nlon*2+1,my_grid%nlat*2+1,1))
-      allocate(lon_global  (my_grid%nlon,  my_grid%nlat    ), lat_global  (my_grid%nlon,  my_grid%nlat    ))
-      call read_data(my_grid%obj, 'x', lon_vert_glo)
-      call read_data(my_grid%obj, 'y', lat_vert_glo)
-      do j = 1, my_grid%nlat
-        do i = 1, my_grid%nlon
-          lon_global(i,j) = lon_vert_glo(i*2,j*2,1)
-          lat_global(i,j) = lat_vert_glo(i*2,j*2,1)
-        end do
-      end do
-    end if
-
     allocate(lon(is:ie,js:je), lat(is:ie,js:je))
-    lon = lon_global(is:ie,js:je)
-    lat = lat_global(is:ie,js:je)
-
-    deallocate(lon_vert_glo)
-    deallocate(lat_vert_glo)
-    deallocate(lon_global)
-    deallocate(lat_global)
+    lon = my_grid%lon_global(is:ie,js:je)
+    lat = my_grid%lat_global(is:ie,js:je)
 
   end subroutine get_grid
 
