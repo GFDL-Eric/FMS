@@ -17,8 +17,50 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
+module class_gridStyle
+  use     fms_mod, only: error_mesg
+  use     mpp_mod, only: FATAL
+  use fms2_io_mod, only: FmsNetcdfFile_t, get_variable_size
+
+  implicit none
+  private
+
+  type, public :: gridStyle_t
+    character(len=32)     :: gridstyle
+    character(len=16)     :: var
+    type(FmsNetcdfFile_t) :: obj
+    integer               :: nlon
+    integer               :: nlat
+    contains
+      procedure           :: get_nlon_nlat => calc_nlon_nlat
+  end type gridStyle_t
+
+contains
+
+  subroutine calc_nlon_nlat(this)
+    class(gridStyle_t), intent(inout) :: this
+    integer, dimension(2)          :: siz
+
+    call get_variable_size(this%obj, trim(this%var), siz)
+    this%nlon = siz(1)
+    this%nlat = siz(2)
+    if(trim(this%gridstyle) == "geolon_t") then
+      this%nlon = this%nlon-1
+      this%nlat = this%nlat-1
+    else if(trim(this%gridstyle) == "ocn_mosaic_file") then
+      if(mod(this%nlon,2) .NE. 0 .OR. mod(this%nlat,2) .NE. 0) then
+        call error_mesg('test_data_override',"test_data_override: supergrid size can not be divided by 2", FATAL)
+      end if
+      this%nlon = this%nlon/2
+      this%nlat = this%nlat/2
+    end if
+  end subroutine calc_nlon_nlat
+
+end module class_gridStyle
+
 program test
 
+  use   class_gridStyle
   use           fms_mod, only: fms_init, fms_end, check_nml_error, open_namelist_file
   use           fms_mod, only: error_mesg, field_exist
   use           fms_mod, only: close_nml_file => close_file
@@ -47,16 +89,6 @@ program test
     real                 :: after
     logical, allocatable :: override(:)
   end type dataOverrideVariable_t
-
-  type gridStyle_t
-    character(len=32)     :: gridstyle
-    character(len=16)     :: var
-    type(FmsNetcdfFile_t) :: obj
-    integer               :: nlon
-    integer               :: nlat
-    contains
-      procedure           :: get_nlat_nlon
-  end type gridStyle_t
 
   integer                           :: nthreads=1
   character(len=256)                :: varname='sst_obs'
@@ -92,7 +124,7 @@ program test
   call fms_init
 
   my_grid = get_grid_style()
-  my_grid%get_nlon_nlat
+  call my_grid%get_nlon_nlat
 
   if(layout(1)*layout(2) .NE. mpp_npes() ) then
     call mpp_define_layout( (/1,my_grid%nlon,1,my_grid%nlat/), mpp_npes(), layout )
@@ -284,24 +316,6 @@ contains
       call error_mesg('test_data_override', 'x_T, geolon_t and ocn_mosaic_file does not exist', FATAL)
     end if
   end function get_grid_style
-
-  subroutine get_nlon_nlat
-    integer, dimension(2) :: siz
-
-    call get_variable_size(my_grid%obj, trim(my_grid%var), siz)
-    my_grid%nlon = siz(1)
-    my_grid%nlat = siz(2)
-    if(trim(my_grid%gridstyle) == "geolon_t") then
-      my_grid%nlon = my_grid%nlon-1
-      my_grid%nlat = my_grid%nlat-1
-    else if(trim(my_grid%gridstyle) == "ocn_mosaic_file") then
-      if(mod(my_grid%nlon,2) .NE. 0 .OR. mod(my_grid%nlat,2) .NE. 0) then
-        call error_mesg('test_data_override',"test_data_override: supergrid size can not be divided by 2", FATAL)
-      end if
-      my_grid%nlon = my_grid%nlon/2
-      my_grid%nlat = my_grid%nlat/2
-    end if
-  end subroutine get_nlon_nlat
 
   subroutine get_grid
     real, allocatable, dimension(:,:,:) :: lon_vert_glo, lat_vert_glo
