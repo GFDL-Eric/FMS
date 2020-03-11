@@ -18,8 +18,11 @@
 !***********************************************************************
 
 module class_dataOverrideVariable
-  use     fms_mod, only: error_mesg
-  use     mpp_mod, only: mpp_chksum, FATAL
+  use           fms_mod, only: error_mesg
+  use           mpp_mod, only: mpp_chksum, FATAL
+  use data_override_mod, only: data_override_init
+  use   mpp_domains_mod, only: domain2d
+
   implicit none
   private
 
@@ -35,12 +38,13 @@ module class_dataOverrideVariable
     real                 :: after
     logical, allocatable :: override(:)
     contains
-      procedure          :: destruct              => destruct_data_override_variable
-      procedure          :: calc_after_sum        => calc_after_sum
-      procedure          :: print_before_sums     => print_before_sums
-      procedure          :: print_after_sums      => print_after_sums
-      procedure          :: check_sums_equal      => check_sums_equal
-      procedure          :: check_override_fails  => check_override_fails
+      procedure          :: destruct                  => destruct_data_override_variable
+      procedure          :: calc_after_sum            => calc_after_sum
+      procedure          :: print_before_sums         => print_before_sums
+      procedure          :: print_after_sums          => print_after_sums
+      procedure          :: check_sums_equal          => check_sums_equal
+      procedure          :: check_override_fails      => check_override_fails
+      procedure          :: data_override_init_wrap2D => data_override_init_wrap2D
   end type dataOverrideVariable_t
 
   interface dataOverrideVariable_t
@@ -112,6 +116,21 @@ contains
       call error_mesg('test_data_override', trim(message), FATAL)
     endif
   end subroutine check_override_fails
+
+  subroutine data_override_init_wrap2D(this, this_domain)
+    class(dataOverrideVariable_t), intent(inout) :: this
+    type(domain2d)                               :: this_domain
+
+    if(this%grid == 'ICE') then
+      call data_override_init(Ice_domain_in=this_domain)
+    else if(this%grid == 'OCN') then
+      call data_override_init(Ocean_domain_in=this_domain)
+    else if(this%grid == 'ATM') then
+      call data_override_init(Atm_domain_in=this_domain)
+    else if(this%grid == 'LND') then
+      call data_override_init(Land_domain_in=this_domain)
+    end if
+  end subroutine data_override_init_wrap2D
 
 end module class_dataOverrideVariable
 
@@ -336,7 +355,6 @@ program test
  
   call mpp_define_domains( (/1,my_grid%nlon,1,my_grid%nlat/), layout, Domain, name='test_data_override')
   call mpp_define_io_domain(Domain, (/1,1/))
-  call data_override_init(Ice_domain_in=Domain, Ocean_domain_in=Domain)
   call mpp_get_compute_domain(Domain, is, ie, js, je)
   call get_domain_grid
 
@@ -357,6 +375,8 @@ program test
 
   vardo = dataOverrideVariable_t(gridname, varname, nwindows, is, ie, js, je)
   call vardo%print_before_sums
+
+  call vardo%data_override_init_wrap2D(Domain)
 
 !$ call omp_set_num_threads(nthreads)
 !!! !$OMP PARALLEL
