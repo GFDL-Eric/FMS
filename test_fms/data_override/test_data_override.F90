@@ -17,6 +17,105 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
+module class_dataOverrideVariable
+  use     fms_mod, only: error_mesg
+  use     mpp_mod, only: mpp_chksum, FATAL
+  implicit none
+  private
+
+  type, public :: dataOverrideVariable_t
+    character(len=128)   :: varname
+    character(len=3)     :: grid
+    integer              :: is
+    integer              :: ie
+    integer              :: js
+    integer              :: je
+    real, allocatable    :: array(:,:)
+    real                 :: before
+    real                 :: after
+    logical, allocatable :: override(:)
+    contains
+      procedure          :: destruct              => destruct_data_override_variable
+      procedure          :: calc_after_sum        => calc_after_sum
+      procedure          :: print_before_sums     => print_before_sums
+      procedure          :: print_after_sums      => print_after_sums
+      procedure          :: check_sums_equal      => check_sums_equal
+      procedure          :: check_override_fails  => check_override_fails
+  end type dataOverrideVariable_t
+
+  interface dataOverrideVariable_t
+    module procedure construct_data_override_variable
+  end interface dataOverrideVariable_t
+
+contains
+
+  function construct_data_override_variable(gridname, varname, nwindows, is, ie, js, je) result(this)
+    character(len=*), intent(in) :: gridname
+    character(len=*), intent(in) :: varname
+    integer, intent(in)          :: nwindows
+    integer, intent(in)          :: is, ie, js, je
+    type(dataOverrideVariable_t) :: this
+
+    this%is = is
+    this%ie = ie
+    this%js = js
+    this%je = je
+    this%grid = trim(gridname)
+    this%varname = trim(varname)
+    allocate(this%array(is:ie,js:je))
+    this%array = 1.0
+    this%before = SUM(this%array)
+    allocate(this%override(nwindows))
+  end function construct_data_override_variable
+
+  subroutine destruct_data_override_variable(this)
+    class(dataOverrideVariable_t) :: this
+
+    deallocate(this%array)
+    deallocate(this%override)
+  end subroutine destruct_data_override_variable
+
+  subroutine calc_after_sum(this)
+    class(dataOverrideVariable_t), intent(inout) :: this
+
+    this%after = SUM(this%array)
+  end subroutine calc_after_sum
+
+  subroutine print_before_sums(this)
+    class(dataOverrideVariable_t), intent(inout) :: this
+
+    print *, trim(this%varname)//" sum before override", this%before
+    print *, trim(this%varname)//" checksum before override", mpp_chksum(this%array)
+  end subroutine print_before_sums
+
+  subroutine print_after_sums(this)
+    class(dataOverrideVariable_t), intent(inout) :: this
+
+    print *, trim(this%varname)//" sum after override", this%after
+    print *, trim(this%varname)//" checksum after override", mpp_chksum(this%array)
+  end subroutine print_after_sums
+
+  subroutine check_sums_equal(this)
+    class(dataOverrideVariable_t), intent(inout) :: this
+
+    if(this%after == this%before) then
+      call error_mesg('test_data_override', this%varname//' sums before and after override are equal', FATAL)
+    endif
+  end subroutine check_sums_equal
+
+  subroutine check_override_fails(this)
+    class(dataOverrideVariable_t), intent(inout) :: this
+    character(len=128)                           :: message
+    
+    if(ANY(.NOT. this%override)) then
+      message = 'override failed for '//trim(this%varname)
+      call error_mesg('test_data_override', trim(message), FATAL)
+    endif
+  end subroutine check_override_fails
+
+end module class_dataOverrideVariable
+
+
 module class_gridStyle
   use     fms_mod, only: error_mesg
   use     mpp_mod, only: mpp_error, FATAL
@@ -171,36 +270,27 @@ end module class_gridStyle
 
 program test
 
-  use   class_gridStyle
-  use           fms_mod, only: fms_init, fms_end, check_nml_error, open_namelist_file
-  use           fms_mod, only: error_mesg, field_exist
-  use           fms_mod, only: close_nml_file => close_file
-  use        fms_io_mod, only: fms_io_exit, file_exist
-  use       fms2_io_mod, only: open_file, read_data
-  use       fms2_io_mod, only: close_file2 => close_file
-  use       fms2_io_mod, only: variable_exists, get_variable_size, FmsNetcdfFile_t
-  use  fms_affinity_mod, only: fms_affinity_set
-  use  time_manager_mod, only: time_type, set_date, set_calendar_type, NOLEAP
-  use  diag_manager_mod, only: diag_manager_init, diag_manager_end, register_static_field, register_diag_field
-  use  diag_manager_mod, only: send_data, diag_axis_init
-  use data_override_mod, only: data_override_init, data_override, data_override_UG
-  use           mpp_mod, only: mpp_pe, mpp_npes, mpp_root_pe, mpp_error, FATAL, NOTE
-  use           mpp_mod, only: input_nml_file, mpp_chksum
-  use           mpp_mod, only: mpp_sync_self, mpp_broadcast
-  use   mpp_domains_mod, only: domain2d, mpp_define_domains, mpp_define_io_domain, mpp_define_layout
-  use   mpp_domains_mod, only: mpp_get_compute_domain
+  use            class_gridStyle
+  use class_dataOverrideVariable
+  use                    fms_mod, only: fms_init, fms_end, check_nml_error, open_namelist_file
+  use                    fms_mod, only: error_mesg
+  use                    fms_mod, only: close_nml_file => close_file
+  use                 fms_io_mod, only: fms_io_exit, file_exist
+  use                fms2_io_mod, only: open_file, read_data
+  use                fms2_io_mod, only: close_file2 => close_file
+  use                fms2_io_mod, only: variable_exists, get_variable_size, FmsNetcdfFile_t
+  use           fms_affinity_mod, only: fms_affinity_set
+  use           time_manager_mod, only: time_type, set_date, set_calendar_type, NOLEAP
+  use           diag_manager_mod, only: diag_manager_init, diag_manager_end, register_static_field, register_diag_field
+  use           diag_manager_mod, only: send_data, diag_axis_init
+  use          data_override_mod, only: data_override_init, data_override, data_override_UG
+  use                    mpp_mod, only: mpp_pe, mpp_npes, mpp_root_pe, mpp_error, FATAL, NOTE
+  use                    mpp_mod, only: input_nml_file, mpp_chksum
+  use            mpp_domains_mod, only: domain2d, mpp_define_domains, mpp_define_io_domain, mpp_define_layout
+  use            mpp_domains_mod, only: mpp_get_compute_domain
 
   implicit none
  
-  type dataOverrideVariable_t
-    character(len=128)   :: varname
-    character(len=3)     :: grid
-    real, allocatable    :: array(:,:)
-    real                 :: before
-    real                 :: after
-    logical, allocatable :: override(:)
-  end type dataOverrideVariable_t
-
   integer                           :: nthreads=1
   character(len=256)                :: varname='sst_obs'
   character(len=3)                  :: gridname='OCN'
@@ -216,8 +306,9 @@ program test
   integer                           :: nwindows, testnum
   type(dataOverrideVariable_t)      :: vardo
   type(gridStyle_t)                 :: my_grid
-  namelist / test_data_override_nml / varname, gridname, testnum
+  namelist / test_data_override_nml / varname, gridname, testnum, window
  
+  call fms_init
 !      read (input_nml_file, test_data_override_nml, iostat=io)
 !      ierr = check_nml_error(io, 'test_data_override_nml')
   if (file_exist('input.nml')) then
@@ -225,13 +316,15 @@ program test
     ierr=1
     do while (ierr /= 0)
       read(unit, nml=test_data_override_nml, iostat=io, end=10)
-!      ierr = check_nml_error(io, 'test_data_override_nml')
+      ierr = check_nml_error(io, 'test_data_override_nml')
     enddo
 10 call close_nml_file (unit)
   endif
 
-  print *, varname, gridname, "varname / gridname"
-  call fms_init
+  print *, "gridname", gridname
+  print *, "varname", varname
+  print *, "testnum", testnum
+  print *, "window", window
 
   my_grid = gridStyle_t()
   call my_grid%get_nlon_nlat
@@ -245,7 +338,7 @@ program test
   call mpp_define_io_domain(Domain, (/1,1/))
   call data_override_init(Ice_domain_in=Domain, Ocean_domain_in=Domain)
   call mpp_get_compute_domain(Domain, is, ie, js, je)
-  call get_grid
+  call get_domain_grid
 
   call set_calendar_type(NOLEAP)
   Time = set_date(2000,7,1,0,0,0)
@@ -262,8 +355,8 @@ program test
   nx_win = nx_dom/window(1)
   ny_win = ny_dom/window(2)
 
-  vardo = construct_data_override_variable(gridname, varname, nwindows)
-  call print_before_sums(vardo)
+  vardo = dataOverrideVariable_t(gridname, varname, nwindows, is, ie, js, je)
+  call vardo%print_before_sums
 
 !$ call omp_set_num_threads(nthreads)
 !!! !$OMP PARALLEL
@@ -280,74 +373,20 @@ program test
                       is_in=isw-is+1, ie_in=iew-is+1, js_in=jsw-js+1, je_in=jew-js+1)
   enddo
 
-  call check_override_fails(vardo)
-  call calc_after_sum(vardo)
-  call print_after_sums(vardo)
-  call check_sums_equal(vardo)
+  call vardo%check_override_fails
+  call vardo%calc_after_sum
+  call vardo%print_after_sums
+  call vardo%check_sums_equal
 
   call send_data_data_override
 
-  call destruct_data_override_variable(vardo)
+  call vardo%destruct
+  deallocate(lon, lat)
   call my_grid%destruct
   call fms_io_exit
   call fms_end
 
 contains
-
-  function construct_data_override_variable(gridname, varname, nwindows) result(vardo)
-    character(len=*), intent(in) :: gridname
-    character(len=*), intent(in) :: varname
-    integer, intent(in)          :: nwindows
-    type(dataOverrideVariable_t) :: vardo
-
-    vardo%grid = trim(gridname)
-    vardo%varname = trim(varname)
-    allocate(vardo%array(is:ie,js:je))
-    vardo%array = 1.0
-    vardo%before = SUM(vardo%array)
-    allocate(vardo%override(nwindows))
-  end function construct_data_override_variable
-
-  subroutine destruct_data_override_variable(vardo)
-    type(dataOverrideVariable_t) :: vardo
-
-    deallocate(vardo%array)
-    deallocate(vardo%override)
-  end subroutine destruct_data_override_variable
-
-  subroutine calc_after_sum(vardo)
-    type(dataOverrideVariable_t), intent(inout) :: vardo
-    vardo%after = SUM(vardo%array)
-  end subroutine calc_after_sum
-
-  subroutine print_before_sums(vardo)
-    type(dataOverrideVariable_t), intent(inout) :: vardo
-    print *, trim(vardo%varname)//" sum before override", vardo%before
-    print *, trim(vardo%varname)//" checksum before override", mpp_chksum(vardo%array)
-  end subroutine print_before_sums
-
-  subroutine print_after_sums(vardo)
-    type(dataOverrideVariable_t), intent(inout) :: vardo
-    print *, trim(vardo%varname)//" sum after override", vardo%after
-    print *, trim(vardo%varname)//" checksum after override", mpp_chksum(vardo%array)
-  end subroutine print_after_sums
-
-  subroutine check_sums_equal(vardo)
-    type(dataOverrideVariable_t), intent(inout) :: vardo
-    if(vardo%after == vardo%before) then
-      call error_mesg('test_data_override', vardo%varname//' sums before and after override are equal', FATAL)
-    endif
-  end subroutine check_sums_equal
-
-  subroutine check_override_fails(vardo)
-    type(dataOverrideVariable_t), intent(inout) :: vardo
-    character(len=128)                          :: message
-    
-    if(ANY(.NOT. vardo%override)) then
-      message = 'override failed for '//trim(vardo%varname)
-      call error_mesg('test_data_override', trim(message), FATAL)
-    endif
-  end subroutine check_override_fails
 
   subroutine send_data_data_override
     real, allocatable, dimension(:)   :: x, y
@@ -369,7 +408,7 @@ contains
    
     id_lon = register_static_field('test_data_override_mod', 'lon', (/id_x,id_y/), 'longitude', 'Degrees')
     id_lat = register_static_field('test_data_override_mod', 'lat', (/id_x,id_y/), 'latitude', 'Degrees')
-    id_var1 = register_diag_field('test_data_override_mod', 'sst_obs', (/id_x,id_y/), Time, 'sst_obs', ' ')
+    id_var1 = register_diag_field('test_data_override_mod', trim(vardo%varname), (/id_x,id_y/), Time, trim(vardo%varname), ' ')
   
     used = send_data(id_lon, lon, Time)
     used = send_data(id_lat, lat, Time)
@@ -380,85 +419,11 @@ contains
 
   end subroutine send_data_data_override 
 
-  subroutine get_grid
+  subroutine get_domain_grid
     allocate(lon(is:ie,js:je), lat(is:ie,js:je))
     lon = my_grid%lon_global(is:ie,js:je)
     lat = my_grid%lat_global(is:ie,js:je)
 
-  end subroutine get_grid
-
-  subroutine compare_checksums( a, b, string )
-    real, intent(in), dimension(:,:,:) :: a, b
-    character(len=*), intent(in) :: string
-    integer(8) :: sum1, sum2
-    integer :: i, j, k, pe
-
-    call mpp_sync_self()
-    pe = mpp_pe()
-
-    if(size(a,1) .ne. size(b,1) .or. size(a,2) .ne. size(b,2) .or. size(a,3) .ne. size(b,3) ) then
-      call mpp_error(FATAL,'compare_chksum: size of a and b does not match')
-    end if
-
-    do k = 1, size(a,3)
-      do j = 1, size(a,2)
-        do i = 1, size(a,1)
-          if(a(i,j,k) .ne. b(i,j,k)) then
-            print*, "pe,i,j,k", pe,i,j,k
-            print*, "a =", a(i,j,k)
-            print*, "b =", b(i,j,k)
-            call mpp_error(FATAL, trim(string)//': point by point comparison are not OK.')
-          endif
-        enddo
-      enddo
-    enddo
-
-    sum1 = mpp_chksum( a, (/pe/) )
-    sum2 = mpp_chksum( b, (/pe/) )
-
-    if(sum1.EQ.sum2) then
-      if(pe.EQ.mpp_root_pe()) then
-        call mpp_error(NOTE, trim(string)//': OK.')
-      end if
-    else
-      call mpp_error(FATAL, trim(string)//': chksums are not OK.')
-    end if
-  end subroutine compare_checksums
-
-  subroutine compare_checksums_2D( a, b, string )
-    real, intent(in), dimension(:,:) :: a, b
-    character(len=*), intent(in) :: string
-    integer(8) :: sum1, sum2
-    integer :: i, j, pe
-
-    call mpp_sync_self()
-    pe = mpp_pe()
-
-    if(size(a,1) .ne. size(b,1) .or. size(a,2) .ne. size(b,2)) then
-      call mpp_error(FATAL,'compare_chksum_2D: size of a and b does not match')
-    end if
-
-    do j = 1, size(a,2)
-      do i = 1, size(a,1)
-        if(a(i,j) .ne. b(i,j)) then
-          print*, "i,j= ", i,j
-          print*, "a =", a(i,j)
-          print*, "b =", b(i,j)
-          call mpp_error(FATAL, trim(string)//': point by point comparison are not OK.')
-        endif
-      enddo
-    enddo
-
-    sum1 = mpp_chksum(a, (/pe/))
-    sum2 = mpp_chksum(b, (/pe/))
-
-    if(sum1.EQ.sum2) then
-      if(pe.EQ.mpp_root_pe()) then
-        call mpp_error(NOTE, trim(string)//': OK.')
-      end if
-    else
-      call mpp_error(FATAL, trim(string)//': chksums are not OK.')
-    end if
-  end subroutine compare_checksums_2D
+  end subroutine get_domain_grid
 
 end program test

@@ -1,7 +1,8 @@
 &test_data_override_nml
-  varname = 'sic_obs'
-  gridname = 'ICE'
-  test_num = <test_num>
+  varname = "sic_obs"
+  gridname = "ICE"
+  testnum = <test_num>
+  window = 1, 2
 /
 
 &data_override_nml
