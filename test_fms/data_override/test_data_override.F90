@@ -139,8 +139,7 @@ module class_gridStyle
   use     fms_mod, only: error_mesg
   use     mpp_mod, only: mpp_error, FATAL
   use fms2_io_mod, only: FmsNetcdfFile_t, get_variable_size
-  use fms2_io_mod, only: open_file, read_data, variable_exists
-  use fms2_io_mod, only: close_file2 => close_file
+  use fms2_io_mod, only: open_file, read_data, close_file, variable_exists
 
   implicit none
   private
@@ -226,8 +225,8 @@ contains
       this%gridstyle = 'ocn_mosaic_file'
       this%obj = tileobj
       this%var = 'area'
-      call close_file2(mosaicobj)
-      call close_file2(gridobj)
+      call close_file(mosaicobj)
+      call close_file(gridobj)
     else
       call error_mesg('test_data_override', 'x_T, geolon_t and ocn_mosaic_file does not exist', FATAL)
     end if
@@ -236,7 +235,7 @@ contains
   subroutine destruct_grid_style(this)
     class(gridStyle_t), intent(inout) :: this
 
-    call close_file2(this%obj)
+    call close_file(this%obj)
     deallocate(this%lon_global)
     deallocate(this%lat_global)
   end subroutine destruct_grid_style
@@ -291,12 +290,9 @@ program test
 
   use            class_gridStyle
   use class_dataOverrideVariable
-  use                    fms_mod, only: fms_init, fms_end, check_nml_error, open_namelist_file
+  use                    fms_mod, only: fms_init, fms_end, check_nml_error
   use                    fms_mod, only: error_mesg
-  use                    fms_mod, only: close_nml_file => close_file
-  use                 fms_io_mod, only: fms_io_exit, file_exist
-  use                fms2_io_mod, only: open_file, read_data
-  use                fms2_io_mod, only: close_file2 => close_file
+  use                fms2_io_mod, only: open_file, read_data, close_file
   use                fms2_io_mod, only: variable_exists, get_variable_size, FmsNetcdfFile_t
   use           fms_affinity_mod, only: fms_affinity_set
   use           time_manager_mod, only: time_type, set_date, set_calendar_type, NOLEAP
@@ -318,7 +314,7 @@ program test
   integer                           :: nx_dom, ny_dom, nx_win, ny_win
   type(domain2d)                    :: Domain
   real, allocatable, dimension(:,:) :: lon, lat
-  integer                           :: i, j, is, ie, js, je, io, ierr, n, unit
+  integer                           :: i, j, is, ie, js, je, io, ierr, n
   type(time_type)                   :: Time
   integer, dimension(2)             :: layout = (/0,0/)
   integer                           :: window(2) = (/1,1/)
@@ -328,17 +324,8 @@ program test
   namelist / test_data_override_nml / varname, gridname, testnum, window
  
   call fms_init
-!      read (input_nml_file, test_data_override_nml, iostat=io)
-!      ierr = check_nml_error(io, 'test_data_override_nml')
-  if (file_exist('input.nml')) then
-    unit = open_namelist_file ( )
-    ierr=1
-    do while (ierr /= 0)
-      read(unit, nml=test_data_override_nml, iostat=io, end=10)
-      ierr = check_nml_error(io, 'test_data_override_nml')
-    enddo
-10 call close_nml_file (unit)
-  endif
+  read (input_nml_file, test_data_override_nml, iostat=io)
+  ierr = check_nml_error(io, 'test_data_override_nml')
 
   print *, "gridname", gridname
   print *, "varname", varname
@@ -403,7 +390,6 @@ program test
   call vardo%destruct
   deallocate(lon, lat)
   call my_grid%destruct
-  call fms_io_exit
   call fms_end
 
 contains
