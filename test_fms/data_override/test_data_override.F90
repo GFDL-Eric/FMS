@@ -16,8 +16,112 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+module class_domain
+  use            class_gridStyle
+  use                    fms_mod, only: error_mesg
+  use                    mpp_mod, only: mpp_npes, mpp_chksum, FATAL
+  use            mpp_domains_mod, only: domain2d, mpp_define_domains, mpp_define_io_domain, mpp_define_layout
+  use            mpp_domains_mod, only: mpp_get_compute_domain
+
+  implicit none
+  private
+
+  type, public :: domainType_t
+    type(domain2D)    :: domain
+    pointer           :: grid => NULL
+    integer           :: layout(2)
+    integer           :: window(2)
+    integer           :: nx_dom
+    integer           :: nx_win
+    integer           :: ny_dom
+    integer           :: ny_win
+    integer           :: nwindows
+    integer           :: is
+    integer           :: ie
+    integer           :: js
+    integer           :: je
+    real, allocatable :: lon(:,:)
+    real, allocatable :: lat(:,:)
+    contains
+      procedure    :: adjust_layout   => adjust_layout
+      procedure    :: get_all_domains => get_all_domains
+      procedure    :: nxny            => nxny
+      procedure    :: get_domain_grid => get_domain_grid
+      procedure    :: destruct        => destruct_domain
+  end type domainType_t
+
+  interface domainType_t
+    module procedure construct_domainType
+  end interface domainType_t
+
+contains
+  function construct_domain_type(d_grid, d_window, layout) result(this)
+    type(gridStyle_t), intent(in) :: d_grid
+    integer, intent(in)           :: d_window(2)
+    integer, intent(in), optional :: layout(2)
+    type(domainType_t)            :: this
+
+    if(.not. present(layout)) then
+      this%layout = (/0, 0/)
+    else
+      this%layout = layout
+    endif
+    this%window = d_window
+    this%grid => d_grid
+  end function construct_data_override_variable
+
+  subroutine destruct_domain(this)
+    class(domainType_t), intent(inout) :: this
+
+    deallocate(this%lon)
+    deallocate(this%lat)
+  end subroutine destruct_domain
+
+  subroutine adjust_layout(this)
+    class(domainType_t), intent(inout) :: this
+
+    if(this%layout(1)*this%layout(2) .NE. mpp_npes() ) then
+      call mpp_define_layout( (/1,this%d_grid%nlon,1,this%d_grid%nlat/), mpp_npes(), this%layout )
+    end if
+  end subroutine adjust_layout
+
+  subroutine get_all_domains(this)
+    class(domainType_t), intent(inout) :: this
+
+    call mpp_define_domains((/1,this%d_grid%nlon,1,this%d_grid%nlat/), this%layout, this%domain, name='test_data_override')
+    call mpp_define_io_domain(this%domain, (/1,1/))
+    call mpp_get_compute_domain(this%domain, this%is, this%ie, this%js, this%je)
+    call this%get_domain_grid
+  end subroutine get_all_domains
+
+  subroutine nxny(this)
+    class(domainType_t), intent(inout) :: this
+
+    this%nx_dom = this%ie - this%is + 1
+    this%ny_dom = this%je - this%js + 1
+    if( mod( this%nx_dom, this%window(1) ) .NE. 0 ) call error_mesg('test_data_override', &
+            "nx_dom is not divisible by window(1)", FATAL)
+    if( mod( this%ny_dom, this%window(2) ) .NE. 0 ) call error_mesg('test_data_override', &
+          "ny_dom is not divisible by window(2)", FATAL)
+
+    this%nwindows = this%window(1)*this%window(2)
+
+    this%nx_win = this%nx_dom/this%window(1)
+    this%ny_win = this%ny_dom/this%window(2)
+  end subroutine nxny
+
+  subroutine get_domain_grid
+    class(domainType_t), intent(inout) :: this
+
+    allocate(this%lon(this%is:this%ie,this%js:this%je), this%lat(this%is:this%ie,this%js:this%je))
+    this%lon = this%d_grid%lon_global(this%is:this%ie,this%js:this%je)
+    this%lat = this%d_grid%lat_global(this%is:this%ie,this%js:this%je)
+  end subroutine get_domain_grid
+
+end module class_domain
 
 module class_dataOverrideVariable
+  use      class_Domain
   use           fms_mod, only: error_mesg
   use           mpp_mod, only: mpp_chksum, FATAL
   use data_override_mod, only: data_override_init
@@ -29,10 +133,7 @@ module class_dataOverrideVariable
   type, public :: dataOverrideVariable_t
     character(len=128)   :: varname
     character(len=3)     :: grid
-    integer              :: is
-    integer              :: ie
-    integer              :: js
-    integer              :: je
+    pointer              :: domain
     real, allocatable    :: array(:,:)
     real                 :: before
     real                 :: after
@@ -45,6 +146,7 @@ module class_dataOverrideVariable
       procedure          :: check_sums_equal          => check_sums_equal
       procedure          :: check_override_fails      => check_override_fails
       procedure          :: data_override_init_wrap2D => data_override_init_wrap2D
+      procedure          :: exec_data_override        => exec_data_override
   end type dataOverrideVariable_t
 
   interface dataOverrideVariable_t
@@ -53,23 +155,19 @@ module class_dataOverrideVariable
 
 contains
 
-  function construct_data_override_variable(gridname, varname, nwindows, is, ie, js, je) result(this)
-    character(len=*), intent(in) :: gridname
-    character(len=*), intent(in) :: varname
-    integer, intent(in)          :: nwindows
-    integer, intent(in)          :: is, ie, js, je
-    type(dataOverrideVariable_t) :: this
+  function construct_data_override_variable(gridname, varname, do_domain) result(this)
+    character(len=*), intent(in)   :: gridname
+    character(len=*), intent(in)   :: varname
+    type(domainType_t), intent(in) :: do_domain
+    type(dataOverrideVariable_t)   :: this
 
-    this%is = is
-    this%ie = ie
-    this%js = js
-    this%je = je
+    this%domain => do_domain
     this%grid = trim(gridname)
     this%varname = trim(varname)
-    allocate(this%array(is:ie,js:je))
+    allocate(this%array(this%domain%is:this%domain%ie,this%domain%js:this%domain%je))
     this%array = 1.0
     this%before = SUM(this%array)
-    allocate(this%override(nwindows))
+    allocate(this%override(this%domain%nwindows))
   end function construct_data_override_variable
 
   subroutine destruct_data_override_variable(this)
@@ -117,20 +215,35 @@ contains
     endif
   end subroutine check_override_fails
 
-  subroutine data_override_init_wrap2D(this, this_domain)
+  subroutine data_override_init_wrap2D(this)
     class(dataOverrideVariable_t), intent(inout) :: this
-    type(domain2d)                               :: this_domain
 
     if(this%grid == 'ICE') then
-      call data_override_init(Ice_domain_in=this_domain)
+      call data_override_init(Ice_domain_in=this%domain%domain)
     else if(this%grid == 'OCN') then
-      call data_override_init(Ocean_domain_in=this_domain)
+      call data_override_init(Ocean_domain_in=this%domain%domain)
     else if(this%grid == 'ATM') then
-      call data_override_init(Atm_domain_in=this_domain)
+      call data_override_init(Atm_domain_in=this%domain%domain)
     else if(this%grid == 'LND') then
-      call data_override_init(Land_domain_in=this_domain)
+      call data_override_init(Land_domain_in=this%domain%domain)
     end if
   end subroutine data_override_init_wrap2D
+
+  subroutine exec_data_override(this, my_time)
+    class(dataOverrideVariable_t), intent(inout) :: this
+    integer                                      :: isw, iew, jsw, jew
+
+!$OMP parallel do schedule(static) default(shared) private(isw, iew, jsw, jew)
+    do n = 1, this%domain%nwindows
+      isw = this%domain%nx_win*mod(n-1,this%domain%window(1)) + this%domain%is
+      iew = isw + this%domain%nx_win - 1
+      jsw = this%domain%ny_win*((n-1)/this%domain%window(1)) + this%domain%js
+      jew = jsw + this%domain%ny_win - 1
+      call data_override(this%grid, trim(this%varname), this%array(isw:iew,jsw:jew), my_time, override=this%override(n), &
+          is_in=isw-this%domain%is+1, ie_in=iew-this%domain%is+1, js_in=jsw-this%domain%js+1, je_in=jew-this%domain%js+1)
+    enddo
+  subroutine exec_data_override(this, my_time)
+
 
 end module class_dataOverrideVariable
 
@@ -288,6 +401,7 @@ end module class_gridStyle
 
 program test
 
+  use               class_domain
   use            class_gridStyle
   use class_dataOverrideVariable
   use                    fms_mod, only: fms_init, fms_end, check_nml_error
@@ -327,6 +441,9 @@ program test
   read (input_nml_file, test_data_override_nml, iostat=io)
   ierr = check_nml_error(io, 'test_data_override_nml')
 
+  call set_calendar_type(NOLEAP)
+  Time = set_date(2000,7,1,0,0,0)
+ 
   print *, "gridname", gridname
   print *, "varname", varname
   print *, "testnum", testnum
@@ -336,50 +453,21 @@ program test
   call my_grid%get_nlon_nlat
   call my_grid%get_grid_globals
 
-  if(layout(1)*layout(2) .NE. mpp_npes() ) then
-    call mpp_define_layout( (/1,my_grid%nlon,1,my_grid%nlat/), mpp_npes(), layout )
-  end if
- 
-  call mpp_define_domains( (/1,my_grid%nlon,1,my_grid%nlat/), layout, Domain, name='test_data_override')
-  call mpp_define_io_domain(Domain, (/1,1/))
-  call mpp_get_compute_domain(Domain, is, ie, js, je)
-  call get_domain_grid
+  my_domain = domainType_t(my_grid, window)
+  call my_domain%adjust_layout
+  call my_domain%get_all_domains
+  call my_domain%nxny
 
-  call set_calendar_type(NOLEAP)
-  Time = set_date(2000,7,1,0,0,0)
- 
-  nx_dom = ie - is + 1
-  ny_dom = je - js + 1
-  if( mod( nx_dom, window(1) ) .NE. 0 ) call error_mesg('test_data_override', &
-          "nx_dom is not divisible by window(1)", FATAL)
-  if( mod( ny_dom, window(2) ) .NE. 0 ) call error_mesg('test_data_override', &
-        "ny_dom is not divisible by window(2)", FATAL)
-
-  nwindows = window(1)*window(2)
-
-  nx_win = nx_dom/window(1)
-  ny_win = ny_dom/window(2)
-
-  vardo = dataOverrideVariable_t(gridname, varname, nwindows, is, ie, js, je)
+  vardo = dataOverrideVariable_t(gridname, varname, my_domain)
   call vardo%print_before_sums
-
-  call vardo%data_override_init_wrap2D(Domain)
+  call vardo%data_override_init_wrap2D
 
 !$ call omp_set_num_threads(nthreads)
 !!! !$OMP PARALLEL
 !!! !$ call fms_affinity_set("test_data_override", .FALSE., omp_get_num_threads() )
 !!! !$OMP END PARALLEL
 
-!$OMP parallel do schedule(static) default(shared) private(isw, iew, jsw, jew)
-  do n = 1, nwindows
-    isw = nx_win*mod(n-1,window(1)) + is
-    iew = isw + nx_win - 1
-    jsw = ny_win*((n-1)/window(1)) + js
-    jew = jsw + ny_win - 1
-    call data_override(vardo%grid, trim(vardo%varname), vardo%array(isw:iew,jsw:jew), Time, override=vardo%override(n), &
-                      is_in=isw-is+1, ie_in=iew-is+1, js_in=jsw-js+1, je_in=jew-js+1)
-  enddo
-
+  call vardo%exec_data_override(Time)
   call vardo%check_override_fails
   call vardo%calc_after_sum
   call vardo%print_after_sums
@@ -388,7 +476,7 @@ program test
   call send_data_data_override
 
   call vardo%destruct
-  deallocate(lon, lat)
+  call my_domain%destruct
   call my_grid%destruct
   call fms_end
 
@@ -409,27 +497,20 @@ contains
       y(j) = j
     enddo
   
-    id_x  = diag_axis_init('x', x, 'point_E', 'x', long_name='point_E', Domain2=Domain)
-    id_y  = diag_axis_init('y', y, 'point_N', 'y', long_name='point_N', Domain2=Domain)
+    id_x  = diag_axis_init('x', x, 'point_E', 'x', long_name='point_E', Domain2=vardo%domain%domain)
+    id_y  = diag_axis_init('y', y, 'point_N', 'y', long_name='point_N', Domain2=vardo%domain%domain)
    
     id_lon = register_static_field('test_data_override_mod', 'lon', (/id_x,id_y/), 'longitude', 'Degrees')
     id_lat = register_static_field('test_data_override_mod', 'lat', (/id_x,id_y/), 'latitude', 'Degrees')
     id_var1 = register_diag_field('test_data_override_mod', trim(vardo%varname), (/id_x,id_y/), Time, trim(vardo%varname), ' ')
   
-    used = send_data(id_lon, lon, Time)
-    used = send_data(id_lat, lat, Time)
+    used = send_data(id_lon, vardo%domain%lon, Time)
+    used = send_data(id_lat, vardo%domain%lat, Time)
     if(id_var1 > 0) used = send_data(id_var1, vardo%array, Time)
 
     deallocate(x, y)
     call diag_manager_end(Time)
 
   end subroutine send_data_data_override 
-
-  subroutine get_domain_grid
-    allocate(lon(is:ie,js:je), lat(is:ie,js:je))
-    lon = my_grid%lon_global(is:ie,js:je)
-    lat = my_grid%lat_global(is:ie,js:je)
-
-  end subroutine get_domain_grid
 
 end program test
