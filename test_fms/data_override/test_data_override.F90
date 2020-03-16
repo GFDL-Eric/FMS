@@ -27,21 +27,21 @@ module class_domain
   private
 
   type, public :: domainType_t
-    type(domain2D)    :: domain
-    pointer           :: grid => NULL
-    integer           :: layout(2)
-    integer           :: window(2)
-    integer           :: nx_dom
-    integer           :: nx_win
-    integer           :: ny_dom
-    integer           :: ny_win
-    integer           :: nwindows
-    integer           :: is
-    integer           :: ie
-    integer           :: js
-    integer           :: je
-    real, allocatable :: lon(:,:)
-    real, allocatable :: lat(:,:)
+    type(domain2D)             :: domain
+    type(gridStyle_t), pointer :: d_grid => null()
+    integer                    :: layout(2)
+    integer                    :: window(2)
+    integer                    :: nx_dom
+    integer                    :: nx_win
+    integer                    :: ny_dom
+    integer                    :: ny_win
+    integer                    :: nwindows
+    integer                    :: is
+    integer                    :: ie
+    integer                    :: js
+    integer                    :: je
+    real, allocatable          :: lon(:,:)
+    real, allocatable          :: lat(:,:)
     contains
       procedure    :: adjust_layout   => adjust_layout
       procedure    :: get_all_domains => get_all_domains
@@ -51,15 +51,15 @@ module class_domain
   end type domainType_t
 
   interface domainType_t
-    module procedure construct_domainType
+    module procedure construct_domain_type
   end interface domainType_t
 
 contains
   function construct_domain_type(d_grid, d_window, layout) result(this)
-    type(gridStyle_t), intent(in) :: d_grid
-    integer, intent(in)           :: d_window(2)
-    integer, intent(in), optional :: layout(2)
-    type(domainType_t)            :: this
+    type(gridStyle_t), intent(in), target :: d_grid
+    integer, intent(in)                   :: d_window(2)
+    integer, intent(in), optional         :: layout(2)
+    type(domainType_t)                    :: this
 
     if(.not. present(layout)) then
       this%layout = (/0, 0/)
@@ -67,14 +67,17 @@ contains
       this%layout = layout
     endif
     this%window = d_window
-    this%grid => d_grid
-  end function construct_data_override_variable
+    allocate(this%d_grid)
+    this%d_grid => d_grid
+  end function construct_domain_type
 
   subroutine destruct_domain(this)
     class(domainType_t), intent(inout) :: this
 
     deallocate(this%lon)
     deallocate(this%lat)
+    this%d_grid => null()
+    deallocate(this%d_grid)
   end subroutine destruct_domain
 
   subroutine adjust_layout(this)
@@ -91,7 +94,6 @@ contains
     call mpp_define_domains((/1,this%d_grid%nlon,1,this%d_grid%nlat/), this%layout, this%domain, name='test_data_override')
     call mpp_define_io_domain(this%domain, (/1,1/))
     call mpp_get_compute_domain(this%domain, this%is, this%ie, this%js, this%je)
-    call this%get_domain_grid
   end subroutine get_all_domains
 
   subroutine nxny(this)
@@ -110,7 +112,7 @@ contains
     this%ny_win = this%ny_dom/this%window(2)
   end subroutine nxny
 
-  subroutine get_domain_grid
+  subroutine get_domain_grid(this)
     class(domainType_t), intent(inout) :: this
 
     allocate(this%lon(this%is:this%ie,this%js:this%je), this%lat(this%is:this%ie,this%js:this%je))
@@ -121,32 +123,38 @@ contains
 end module class_domain
 
 module class_dataOverrideVariable
-  use      class_Domain
+  use      class_domain
   use           fms_mod, only: error_mesg
   use           mpp_mod, only: mpp_chksum, FATAL
-  use data_override_mod, only: data_override_init
+  use data_override_mod, only: data_override_init, data_override
   use   mpp_domains_mod, only: domain2d
+  use  time_manager_mod, only: time_type, set_date, set_calendar_type, NOLEAP
+  use  diag_manager_mod, only: diag_manager_init, diag_manager_end, register_static_field, register_diag_field
+  use  diag_manager_mod, only: send_data, diag_axis_init
 
   implicit none
   private
 
   type, public :: dataOverrideVariable_t
-    character(len=128)   :: varname
-    character(len=3)     :: grid
-    pointer              :: domain
-    real, allocatable    :: array(:,:)
-    real                 :: before
-    real                 :: after
-    logical, allocatable :: override(:)
+    character(len=128)          :: varname
+    character(len=3)            :: grid
+    type(domainType_t), pointer :: domain => null()
+    real, allocatable           :: array(:,:)
+    real                        :: before
+    real                        :: after
+    logical, allocatable        :: override(:)
+    type(time_type)             :: time
     contains
-      procedure          :: destruct                  => destruct_data_override_variable
-      procedure          :: calc_after_sum            => calc_after_sum
-      procedure          :: print_before_sums         => print_before_sums
-      procedure          :: print_after_sums          => print_after_sums
-      procedure          :: check_sums_equal          => check_sums_equal
-      procedure          :: check_override_fails      => check_override_fails
-      procedure          :: data_override_init_wrap2D => data_override_init_wrap2D
-      procedure          :: exec_data_override        => exec_data_override
+      procedure                 :: destruct                  => destruct_data_override_variable
+      procedure                 :: get_time                  => get_time
+      procedure                 :: calc_after_sum            => calc_after_sum
+      procedure                 :: print_before_sums         => print_before_sums
+      procedure                 :: print_after_sums          => print_after_sums
+      procedure                 :: check_sums_equal          => check_sums_equal
+      procedure                 :: check_override_fails      => check_override_fails
+      procedure                 :: data_override_init_wrap2D => data_override_init_wrap2D
+      procedure                 :: exec_data_override        => exec_data_override
+      procedure                 :: send_data_do              => send_data_do
   end type dataOverrideVariable_t
 
   interface dataOverrideVariable_t
@@ -155,15 +163,16 @@ module class_dataOverrideVariable
 
 contains
 
-  function construct_data_override_variable(gridname, varname, do_domain) result(this)
-    character(len=*), intent(in)   :: gridname
-    character(len=*), intent(in)   :: varname
-    type(domainType_t), intent(in) :: do_domain
-    type(dataOverrideVariable_t)   :: this
+  function construct_data_override_variable(do_gridname, do_domain, do_varname) result(this)
+    character(len=3), intent(in)           :: do_gridname
+    character(len=128), intent(in)         :: do_varname
+    type(domainType_t), intent(in), target :: do_domain
+    type(dataOverrideVariable_t)           :: this
 
+    allocate(this%domain)
     this%domain => do_domain
-    this%grid = trim(gridname)
-    this%varname = trim(varname)
+    this%grid = trim(do_gridname)
+    this%varname = trim(do_varname)
     allocate(this%array(this%domain%is:this%domain%ie,this%domain%js:this%domain%je))
     this%array = 1.0
     this%before = SUM(this%array)
@@ -175,7 +184,16 @@ contains
 
     deallocate(this%array)
     deallocate(this%override)
+    this%domain => null()
+    deallocate(this%domain)
   end subroutine destruct_data_override_variable
+
+  subroutine get_time(this)
+    class(dataOverrideVariable_t), intent(inout) :: this
+
+    call set_calendar_type(NOLEAP)
+    this%time = set_date(2000,7,1,0,0,0)
+  end subroutine get_time
 
   subroutine calc_after_sum(this)
     class(dataOverrideVariable_t), intent(inout) :: this
@@ -229,20 +247,55 @@ contains
     end if
   end subroutine data_override_init_wrap2D
 
-  subroutine exec_data_override(this, my_time)
+  subroutine exec_data_override(this)
     class(dataOverrideVariable_t), intent(inout) :: this
-    integer                                      :: isw, iew, jsw, jew
 
+    integer                                      :: isw, iew, jsw, jew, n
+
+    call set_calendar_type(NOLEAP)
 !$OMP parallel do schedule(static) default(shared) private(isw, iew, jsw, jew)
     do n = 1, this%domain%nwindows
       isw = this%domain%nx_win*mod(n-1,this%domain%window(1)) + this%domain%is
       iew = isw + this%domain%nx_win - 1
       jsw = this%domain%ny_win*((n-1)/this%domain%window(1)) + this%domain%js
       jew = jsw + this%domain%ny_win - 1
-      call data_override(this%grid, trim(this%varname), this%array(isw:iew,jsw:jew), my_time, override=this%override(n), &
+      call data_override(this%grid, trim(this%varname), this%array(isw:iew,jsw:jew), this%time, override=this%override(n), &
           is_in=isw-this%domain%is+1, ie_in=iew-this%domain%is+1, js_in=jsw-this%domain%js+1, je_in=jew-this%domain%js+1)
     enddo
-  subroutine exec_data_override(this, my_time)
+  end subroutine exec_data_override
+
+  subroutine send_data_do(this)
+    class(dataOverrideVariable_t), intent(inout) :: this
+    real, allocatable, dimension(:)              :: x, y
+    integer                                      :: i, j, id_x, id_y, id_lon, id_lat, id_var1
+    logical                                      :: used
+
+    call diag_manager_init
+    call set_calendar_type(NOLEAP)
+    allocate(x(this%domain%d_grid%nlon), y(this%domain%d_grid%nlat))
+   
+    do i=1,this%domain%d_grid%nlon
+      x(i) = i
+    enddo
+    do j=1,this%domain%d_grid%nlat
+      y(j) = j
+    enddo
+  
+    id_x  = diag_axis_init('x', x, 'point_E', 'x', long_name='point_E', Domain2=this%domain%domain)
+    id_y  = diag_axis_init('y', y, 'point_N', 'y', long_name='point_N', Domain2=this%domain%domain)
+   
+    id_lon = register_static_field('test_data_override_mod', 'lon', (/id_x,id_y/), 'longitude', 'Degrees')
+    id_lat = register_static_field('test_data_override_mod', 'lat', (/id_x,id_y/), 'latitude', 'Degrees')
+    id_var1 = register_diag_field('test_data_override_mod', trim(this%varname), (/id_x,id_y/), this%time, trim(this%varname), ' ')
+  
+    used = send_data(id_lon, this%domain%lon, this%time)
+    used = send_data(id_lat, this%domain%lat, this%time)
+    if(id_var1 > 0) used = send_data(id_var1, this%array, this%time)
+
+    deallocate(x, y)
+    call diag_manager_end(this%time)
+
+  end subroutine send_data_do 
 
 
 end module class_dataOverrideVariable
@@ -405,18 +458,8 @@ program test
   use            class_gridStyle
   use class_dataOverrideVariable
   use                    fms_mod, only: fms_init, fms_end, check_nml_error
-  use                    fms_mod, only: error_mesg
-  use                fms2_io_mod, only: open_file, read_data, close_file
-  use                fms2_io_mod, only: variable_exists, get_variable_size, FmsNetcdfFile_t
   use           fms_affinity_mod, only: fms_affinity_set
-  use           time_manager_mod, only: time_type, set_date, set_calendar_type, NOLEAP
-  use           diag_manager_mod, only: diag_manager_init, diag_manager_end, register_static_field, register_diag_field
-  use           diag_manager_mod, only: send_data, diag_axis_init
-  use          data_override_mod, only: data_override_init, data_override, data_override_UG
-  use                    mpp_mod, only: mpp_pe, mpp_npes, mpp_root_pe, mpp_error, FATAL, NOTE
-  use                    mpp_mod, only: input_nml_file, mpp_chksum
-  use            mpp_domains_mod, only: domain2d, mpp_define_domains, mpp_define_io_domain, mpp_define_layout
-  use            mpp_domains_mod, only: mpp_get_compute_domain
+  use                    mpp_mod, only: input_nml_file
 
   implicit none
  
@@ -424,16 +467,12 @@ program test
   character(len=256)                :: varname='sst_obs'
   character(len=3)                  :: gridname='OCN'
   integer                           :: omp_get_num_threads
-  integer                           :: isw, iew, jsw, jew
-  integer                           :: nx_dom, ny_dom, nx_win, ny_win
-  type(domain2d)                    :: Domain
-  real, allocatable, dimension(:,:) :: lon, lat
-  integer                           :: i, j, is, ie, js, je, io, ierr, n
-  type(time_type)                   :: Time
   integer, dimension(2)             :: layout = (/0,0/)
   integer                           :: window(2) = (/1,1/)
-  integer                           :: nwindows, testnum
+  integer                           :: testnum
+  integer                           :: io, ierr
   type(dataOverrideVariable_t)      :: vardo
+  type(domainType_t)                :: my_domain
   type(gridStyle_t)                 :: my_grid
   namelist / test_data_override_nml / varname, gridname, testnum, window
  
@@ -441,9 +480,6 @@ program test
   read (input_nml_file, test_data_override_nml, iostat=io)
   ierr = check_nml_error(io, 'test_data_override_nml')
 
-  call set_calendar_type(NOLEAP)
-  Time = set_date(2000,7,1,0,0,0)
- 
   print *, "gridname", gridname
   print *, "varname", varname
   print *, "testnum", testnum
@@ -457,8 +493,10 @@ program test
   call my_domain%adjust_layout
   call my_domain%get_all_domains
   call my_domain%nxny
+  call my_domain%get_domain_grid
 
-  vardo = dataOverrideVariable_t(gridname, varname, my_domain)
+  print *, my_domain%ie
+  vardo = dataOverrideVariable_t(gridname, my_domain, varname)
   call vardo%print_before_sums
   call vardo%data_override_init_wrap2D
 
@@ -467,50 +505,17 @@ program test
 !!! !$ call fms_affinity_set("test_data_override", .FALSE., omp_get_num_threads() )
 !!! !$OMP END PARALLEL
 
-  call vardo%exec_data_override(Time)
+  call vardo%exec_data_override
   call vardo%check_override_fails
   call vardo%calc_after_sum
   call vardo%print_after_sums
   call vardo%check_sums_equal
 
-  call send_data_data_override
+  call vardo%send_data_do
 
   call vardo%destruct
   call my_domain%destruct
   call my_grid%destruct
   call fms_end
-
-contains
-
-  subroutine send_data_data_override
-    real, allocatable, dimension(:)   :: x, y
-    integer                           :: id_x, id_y, id_lon, id_lat, id_var1
-    logical                           :: used
-
-    call diag_manager_init
-    allocate(x(my_grid%nlon), y(my_grid%nlat))
-   
-    do i=1,my_grid%nlon
-      x(i) = i
-    enddo
-    do j=1,my_grid%nlat
-      y(j) = j
-    enddo
-  
-    id_x  = diag_axis_init('x', x, 'point_E', 'x', long_name='point_E', Domain2=vardo%domain%domain)
-    id_y  = diag_axis_init('y', y, 'point_N', 'y', long_name='point_N', Domain2=vardo%domain%domain)
-   
-    id_lon = register_static_field('test_data_override_mod', 'lon', (/id_x,id_y/), 'longitude', 'Degrees')
-    id_lat = register_static_field('test_data_override_mod', 'lat', (/id_x,id_y/), 'latitude', 'Degrees')
-    id_var1 = register_diag_field('test_data_override_mod', trim(vardo%varname), (/id_x,id_y/), Time, trim(vardo%varname), ' ')
-  
-    used = send_data(id_lon, vardo%domain%lon, Time)
-    used = send_data(id_lat, vardo%domain%lat, Time)
-    if(id_var1 > 0) used = send_data(id_var1, vardo%array, Time)
-
-    deallocate(x, y)
-    call diag_manager_end(Time)
-
-  end subroutine send_data_data_override 
 
 end program test
