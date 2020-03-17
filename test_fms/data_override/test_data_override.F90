@@ -117,8 +117,8 @@ contains
     class(gridStyle_t), intent(inout) :: this
 
     call close_file(this%obj)
-    deallocate(this%lon_global)
-    deallocate(this%lat_global)
+    if (allocated(this%lon_global)) deallocate(this%lon_global)
+    if (allocated(this%lat_global)) deallocate(this%lat_global)
   end subroutine destruct_grid_style
 
   subroutine get_lonlat_globals(this)
@@ -159,8 +159,8 @@ contains
       end do
     end if
 
-    deallocate(lon_vert_glo)
-    deallocate(lat_vert_glo)
+    if (allocated(lon_vert_glo)) deallocate(lon_vert_glo)
+    if (allocated(lat_vert_glo)) deallocate(lat_vert_glo)
 
   end subroutine get_lonlat_globals
 
@@ -225,10 +225,10 @@ contains
   subroutine destruct_domain(this)
     class(domainType_t), intent(inout) :: this
 
-    deallocate(this%lon)
-    deallocate(this%lat)
+    if (allocated(this%lon)) deallocate(this%lon)
+    if (allocated(this%lat)) deallocate(this%lat)
     this%d_grid => null()
-    deallocate(this%d_grid)
+    if (associated(this%d_grid)) deallocate(this%d_grid)
   end subroutine destruct_domain
 
   subroutine adjust_layout(this)
@@ -333,10 +333,10 @@ contains
   subroutine destruct_data_override_variable(this)
     class(dataOverrideVariable_t) :: this
 
-    deallocate(this%array)
-    deallocate(this%override)
+    if (allocated(this%array)) deallocate(this%array)
+    if (allocated(this%override)) deallocate(this%override)
     this%domain => null()
-    deallocate(this%domain)
+    if (associated(this%domain)) deallocate(this%domain)
   end subroutine destruct_data_override_variable
 
   subroutine get_time(this)
@@ -443,7 +443,7 @@ contains
     used = send_data(id_lat, this%domain%lat, this%time)
     if(id_var1 > 0) used = send_data(id_var1, this%array, this%time)
 
-    deallocate(x, y)
+    if (allocated(x) .and. allocated(y)) deallocate(x, y)
     call diag_manager_end(this%time)
 
   end subroutine send_data_do 
