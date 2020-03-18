@@ -496,6 +496,7 @@ program test
   call my_domain%get_domain_grid
 
   vardo = dataOverrideVariable_t(gridname, my_domain, varname)
+  call vardo%get_time
   call vardo%print_before_sums
   call vardo%data_override_init_wrap2D
 
