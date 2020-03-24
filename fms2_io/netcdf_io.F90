@@ -842,7 +842,7 @@ end subroutine netcdf_save_restart
 !!        a netcdf file.
 subroutine netcdf_restore_state(fileobj, unlim_dim_level)
 
-  type(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
+  type(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object.
   integer, intent(in), optional :: unlim_dim_level !< Unlimited dimension
                                                    !! level.
 
@@ -1606,18 +1606,17 @@ elemental function is_valid(datum, validobj) &
   class(*), intent(in) :: datum !< Unpacked data element.
   type(Valid_t), intent(in) :: validobj !< Valid object.
   logical :: valid_data
-
   real(kind=real64) :: rdatum
 
   select type (datum)
-    type is (integer(kind=int32))
-      rdatum = real(datum, kind=real64)
     type is (real(kind=real32))
-      rdatum = real(datum, kind=real64)
+      rdatum = datum
     type is (real(kind=real64))
-      rdatum = real(datum, kind=real64)
- !  class default
- !    call error("unsupported type.")
+      rdatum = datum
+    type is (integer(kind=int32))
+      rdatum = datum
+    type is (integer(kind=int64))
+      rdatum = datum
   end select
 
   valid_data = .true.
