@@ -18,7 +18,7 @@
 !***********************************************************************
 
 program test_get_ascii_lines
-  use mpp_mod, only : get_ascii_file_num_lines
+  use mpp_mod, only : get_ascii_file_num_lines, INPUT_STR_LENGTH
 
   implicit none
 
@@ -30,7 +30,7 @@ program test_get_ascii_lines
   character(len=10) :: file_5_line="ascii_5   "
 
   ! Check on 5 line file
-  call assertEquals(get_ascii_file_num_lines(file_5_line), my_num_lines, "all kine linez")
+  call assertEquals(get_ascii_file_num_lines(file_5_line, INPUT_STR_LENGTH), my_num_lines, "all kine linez")
 
 contains
 
