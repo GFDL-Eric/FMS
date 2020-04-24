@@ -51,6 +51,6 @@ contains
        write (ERROR_UNIT, '(A," ",I0," - ",A)') "not ok", test_count, test_name
        write (ERROR_UNIT, '("Expected """,I0,""" got """,I0,""".""")') expval, tstval
     end if
-  end subroutine assertEquals_str_str
-end program test_uppercase
+  end subroutine assertEquals_int_int
+end program test_get_ascii_lines
 
