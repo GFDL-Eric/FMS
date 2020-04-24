@@ -53,7 +53,7 @@ then
 elif [ $nProc -lt 12 ]
 then
    # Need to oversubscribe the MPI
-   run_test test_mpp_get_ascii_lines 12 $skip_test "true"
+   run_test test_mpp_get_ascii_lines 2 $skip_test "true"
 fi
 
-run_test test_mpp_get_ascii_lines 12 $skip_test
+run_test test_mpp_get_ascii_lines 2 $skip_test

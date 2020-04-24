@@ -32,7 +32,8 @@ LDADD = ${top_builddir}/libFMS/libFMS.la
 check_PROGRAMS = test_mpp_io test_mpp_get_ascii_lines
 
 # This is the source code for the test.
-test_mpp_io_SOURCES = test_mpp_io.F90 test_mpp_get_ascii_lines.F90
+test_mpp_io_SOURCES = test_mpp_io.F90
+test_mpp_get_ascii_lines_SOURCES = test_mpp_get_ascii_lines.F90
 
 # Run the test program.
 TESTS = test_mpp_io2.sh test_mpp_get_ascii_lines2.sh
