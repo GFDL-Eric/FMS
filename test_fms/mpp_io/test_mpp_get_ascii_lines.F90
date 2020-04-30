@@ -18,7 +18,7 @@
 !***********************************************************************
 
 program test_get_ascii_lines
-  use mpp_mod, only : get_ascii_file_num_lines, INPUT_STR_LENGTH
+  use mpp_mod, only : get_ascii_file_num_lines, mpp_init, mpp_exit, INPUT_STR_LENGTH
 
   implicit none
 
@@ -26,12 +26,18 @@ program test_get_ascii_lines
      procedure assertEquals_int_int
   end interface assertEquals
 
-  integer :: my_num_lines=5
+  integer :: my_known_lines=5
+!  integer :: my_guess_lines_in_file
   character(len=10) :: file_5_line="ascii_5   "
 
+  call mpp_init()
   ! Check on 5 line file
-  call assertEquals(get_ascii_file_num_lines(file_5_line, INPUT_STR_LENGTH), my_num_lines, "all kine linez")
-
+  call assertEquals(get_ascii_file_num_lines(trim(file_5_line), INPUT_STR_LENGTH), my_known_lines, "all kine linez")
+!  print *, file_5_line
+!  my_guess_lines_in_file = get_ascii_file_num_lines(trim(file_5_line), INPUT_STR_LENGTH)
+!  my_guess_lines_in_file = get_ascii_file_num_lines("ascii_5_si", 256)
+!  print *, my_guess_lines_in_file
+  call mpp_exit()
 contains
 
   subroutine assertEquals_int_int(tstval, expval, test_name)
