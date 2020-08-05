@@ -48,7 +48,8 @@ check_PROGRAMS = test_mpp \
   test_mpp_npes \
   test_mpp_pe \
   test_mpp_root_pe \
-  test_peset
+  test_peset \
+  test_minmax
 
 # These are the sources for the tests.
 test_mpp_SOURCES = test_mpp.F90
@@ -72,6 +73,7 @@ test_mpp_npes_SOURCES = test_mpp_npes.F90
 test_mpp_pe_SOURCES = test_mpp_pe.F90
 test_mpp_root_pe_SOURCES=test_mpp_root_pe.F90
 test_peset_SOURCES=test_peset.F90
+test_minmax_SOURCES=test_minmax.F90
 
 # Run the test programs.
 TESTS = test_mpp_domains2.sh \
@@ -89,7 +91,8 @@ TESTS = test_mpp_domains2.sh \
   test_mpp_npes.sh \
   test_mpp_pe.sh \
   test_mpp_root_pe.sh \
-  test_peset.sh
+  test_peset.sh \
+  test_minmax.sh
 
 # These files will also be included in the distribution.
 EXTRA_DIST = input_base.nml \
@@ -111,7 +114,8 @@ EXTRA_DIST = input_base.nml \
   test_mpp_npes.sh \
   test_mpp_pe.sh \
   test_mpp_root_pe.sh \
-  test_peset.sh
+  test_peset.sh \
+  test_minmax.sh
 
 # Clean up
 CLEANFILES = include_files_mod.mod input.nml *.out* ascii*
