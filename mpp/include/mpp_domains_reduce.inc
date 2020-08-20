@@ -61,7 +61,6 @@
 #define MPP_REDUCE_ mpp_min
 #include <mpp_global_reduce.h>
 
-#ifdef OVERLOAD_R4
 #undef MPP_GLOBAL_REDUCE_2D_
 #define MPP_GLOBAL_REDUCE_2D_ mpp_global_max_r4_2d
 #undef MPP_GLOBAL_REDUCE_3D_
@@ -97,7 +96,6 @@
 #undef MPP_REDUCE_
 #define MPP_REDUCE_ mpp_min
 #include <mpp_global_reduce.h>
-#endif
 
 #ifndef no_8byte_integers
 #undef MPP_GLOBAL_REDUCE_2D_
@@ -211,7 +209,6 @@
 #define MPP_TYPE_ real(DOUBLE_KIND)
 #include <mpp_global_sum.h>
 
-#ifdef OVERLOAD_R4
 #undef MPP_GLOBAL_SUM_
 #define MPP_GLOBAL_SUM_ mpp_global_sum_r4_2d
 #undef MPP_EXTRA_INDICES_
@@ -243,7 +240,6 @@
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
 #include <mpp_global_sum.h>
-#endif
 
 #undef DO_EFP_SUM_
 
@@ -455,7 +451,6 @@
 #include <mpp_global_sum_tl.h>
 #endif
 
-#ifdef OVERLOAD_R4
 #undef MPP_GLOBAL_SUM_TL_
 #define MPP_GLOBAL_SUM_TL_ mpp_global_sum_tl_r4_2d
 #undef MPP_EXTRA_INDICES_
@@ -487,7 +482,6 @@
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
 #include <mpp_global_sum_tl.h>
-#endif
 
 #ifdef OVERLOAD_C4
 #undef MPP_GLOBAL_SUM_TL_
@@ -663,7 +657,6 @@
 #include <mpp_global_sum_ad.h>
 #endif
 
-#ifdef OVERLOAD_R4
 #undef MPP_GLOBAL_SUM_AD_
 #define MPP_GLOBAL_SUM_AD_ mpp_global_sum_ad_r4_2d
 #undef MPP_EXTRA_INDICES_
@@ -695,7 +688,6 @@
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
 #include <mpp_global_sum_ad.h>
-#endif
 
 #ifdef OVERLOAD_C4
 #undef MPP_GLOBAL_SUM_AD_
@@ -856,7 +848,6 @@
 #include <mpp_global_field.h>
 #endif
 
-#ifdef OVERLOAD_R4
 #undef MPP_GLOBAL_FIELD_2D_
 #define MPP_GLOBAL_FIELD_2D_ mpp_global_field2D_r4_2d
 #undef MPP_GLOBAL_FIELD_3D_
@@ -868,7 +859,6 @@
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
 #include <mpp_global_field.h>
-#endif
 
 #ifdef OVERLOAD_C4
 #undef MPP_GLOBAL_FIELD_2D_
@@ -961,7 +951,6 @@
 #include <mpp_global_field_ad.h>
 #endif
 
-#ifdef OVERLOAD_R4
 #undef MPP_GLOBAL_FIELD_2D_AD_
 #define MPP_GLOBAL_FIELD_2D_AD_ mpp_global_field2D_r4_2d_ad
 #undef MPP_GLOBAL_FIELD_3D_AD_
@@ -973,7 +962,6 @@
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
 #include <mpp_global_field_ad.h>
-#endif
 
 #ifdef OVERLOAD_C4
 #undef MPP_GLOBAL_FIELD_2D_AD_
@@ -1052,7 +1040,6 @@
 #undef LOGICAL_VARIABLE
 #endif
 
-#ifdef OVERLOAD_R4
 #undef MPP_DO_GLOBAL_FIELD_3D_
 #undef MPP_DO_GLOBAL_FIELD_A2A_3D_
 #define MPP_DO_GLOBAL_FIELD_3D_ mpp_do_global_field2D_r4_3d
@@ -1060,7 +1047,6 @@
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
 #include <mpp_do_global_field.h>
-#endif
 
 #ifdef OVERLOAD_C4
 #undef MPP_DO_GLOBAL_FIELD_3D_
@@ -1120,13 +1106,11 @@
 #undef LOGICAL_VARIABLE
 #endif
 
-#ifdef OVERLOAD_R4
 #undef MPP_DO_GLOBAL_FIELD_3D_AD_
 #define MPP_DO_GLOBAL_FIELD_3D_AD_ mpp_do_global_field2D_r4_3d_ad
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
 #include <mpp_do_global_field_ad.h>
-#endif
 
 #ifdef OVERLOAD_C4
 #undef MPP_DO_GLOBAL_FIELD_3D_AD_

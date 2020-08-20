@@ -803,7 +803,6 @@ end subroutine mpp_deallocate_domainUG
 #define mpp_pass_UG_to_SG_3D_ mpp_pass_UG_to_SG_r8_3d
 #include <mpp_unstruct_pass_data.h>
 
-#ifdef OVERLOAD_R4
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
 #undef mpp_pass_SG_to_UG_2D_
@@ -815,7 +814,6 @@ end subroutine mpp_deallocate_domainUG
 #undef mpp_pass_UG_to_SG_3D_
 #define mpp_pass_UG_to_SG_3D_ mpp_pass_UG_to_SG_r4_3d
 #include <mpp_unstruct_pass_data.h>
-#endif
 
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(INT_KIND)
@@ -867,7 +865,6 @@ end subroutine mpp_deallocate_domainUG
 #include <mpp_global_field_ug.h>
 #endif
 
-#ifdef OVERLOAD_R4
 #undef MPP_GLOBAL_FIELD_UG_2D_
 #define MPP_GLOBAL_FIELD_UG_2D_ mpp_global_field2D_ug_r4_2d
 #undef MPP_GLOBAL_FIELD_UG_3D_
@@ -879,7 +876,6 @@ end subroutine mpp_deallocate_domainUG
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(FLOAT_KIND)
 #include <mpp_global_field_ug.h>
-#endif
 
 #undef MPP_GLOBAL_FIELD_UG_2D_
 #define MPP_GLOBAL_FIELD_UG_2D_ mpp_global_field2D_ug_i4_2d

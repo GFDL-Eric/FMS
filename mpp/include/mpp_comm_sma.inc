@@ -526,7 +526,6 @@ end subroutine mpp_malloc
 #include <mpp_transmit_sma.h>
 #endif
 
-#ifdef OVERLOAD_R4
 #undef MPP_TRANSMIT_
 #define MPP_TRANSMIT_ mpp_transmit_real4
 #undef MPP_TRANSMIT_SCALAR_
@@ -584,7 +583,6 @@ end subroutine mpp_malloc
 #undef SHMEM_GET_
 #define SHMEM_GET_ SHMEM_GET4
 #include <mpp_transmit_sma.h>
-#endif
 
 #ifdef OVERLOAD_C4
 #undef MPP_TRANSMIT_
@@ -900,7 +898,6 @@ end subroutine mpp_malloc
 #define SHMEM_REDUCE_ SHMEM_REAL8_MAX_TO_ALL
 #include <mpp_reduce_sma.h>
 
-#ifdef OVERLOAD_R4
 #undef MPP_REDUCE_0D_
 #define MPP_REDUCE_0D_ mpp_max_real4_0d
 #undef MPP_REDUCE_1D_
@@ -912,7 +909,6 @@ end subroutine mpp_malloc
 #undef SHMEM_REDUCE_
 #define SHMEM_REDUCE_ SHMEM_REAL4_MAX_TO_ALL
 #include <mpp_reduce_sma.h>
-#endif
 
 #ifndef no_8byte_integers
 #undef MPP_REDUCE_0D_
@@ -952,7 +948,6 @@ end subroutine mpp_malloc
 #define SHMEM_REDUCE_ SHMEM_REAL8_MIN_TO_ALL
 #include <mpp_reduce_sma.h>
 
-#ifdef OVERLOAD_R4
 #undef MPP_REDUCE_0D_
 #define MPP_REDUCE_0D_ mpp_min_real4_0d
 #undef MPP_REDUCE_1D_
@@ -964,7 +959,6 @@ end subroutine mpp_malloc
 #undef SHMEM_REDUCE_
 #define SHMEM_REDUCE_ SHMEM_REAL4_MIN_TO_ALL
 #include <mpp_reduce_sma.h>
-#endif
 
 #ifndef no_8byte_integers
 #undef MPP_REDUCE_0D_
@@ -1034,7 +1028,6 @@ end subroutine mpp_malloc
 #include <mpp_sum_sma.h>
 #endif
 
-#ifdef OVERLOAD_R4
 #undef MPP_SUM_
 #define MPP_SUM_ mpp_sum_real4
 #undef MPP_SUM_SCALAR_
@@ -1054,7 +1047,6 @@ end subroutine mpp_malloc
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 4
 #include <mpp_sum_sma.h>
-#endif
 
 #ifdef OVERLOAD_C4
 #undef MPP_SUM_

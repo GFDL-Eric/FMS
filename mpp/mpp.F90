@@ -613,10 +613,8 @@ private
      module procedure mpp_max_int8_0d
      module procedure mpp_max_int8_1d
 #endif
-#ifdef OVERLOAD_R4
      module procedure mpp_max_real4_0d
      module procedure mpp_max_real4_1d
-#endif
      module procedure mpp_max_int4_0d
      module procedure mpp_max_int4_1d
   end interface
@@ -628,10 +626,8 @@ private
      module procedure mpp_min_int8_0d
      module procedure mpp_min_int8_1d
 #endif
-#ifdef OVERLOAD_R4
      module procedure mpp_min_real4_0d
      module procedure mpp_min_real4_1d
-#endif
      module procedure mpp_min_int4_0d
      module procedure mpp_min_int4_1d
   end interface
@@ -699,14 +695,12 @@ private
      module procedure mpp_sum_int4_3d
      module procedure mpp_sum_int4_4d
      module procedure mpp_sum_int4_5d
-#ifdef OVERLOAD_R4
      module procedure mpp_sum_real4
      module procedure mpp_sum_real4_scalar
      module procedure mpp_sum_real4_2d
      module procedure mpp_sum_real4_3d
      module procedure mpp_sum_real4_4d
      module procedure mpp_sum_real4_5d
-#endif
 #ifdef OVERLOAD_C4
      module procedure mpp_sum_cmplx4
      module procedure mpp_sum_cmplx4_scalar
@@ -746,14 +740,12 @@ private
      module procedure mpp_sum_int4_3d_ad
      module procedure mpp_sum_int4_4d_ad
      module procedure mpp_sum_int4_5d_ad
-#ifdef OVERLOAD_R4
      module procedure mpp_sum_real4_ad
      module procedure mpp_sum_real4_scalar_ad
      module procedure mpp_sum_real4_2d_ad
      module procedure mpp_sum_real4_3d_ad
      module procedure mpp_sum_real4_4d_ad
      module procedure mpp_sum_real4_5d_ad
-#endif
 #ifdef OVERLOAD_C4
      module procedure mpp_sum_cmplx4_ad
      module procedure mpp_sum_cmplx4_scalar_ad
@@ -1266,14 +1258,12 @@ private
      module procedure mpp_chksum_c8_4d
      module procedure mpp_chksum_c8_5d
 #endif
-#ifdef OVERLOAD_R4
      module procedure mpp_chksum_r4_0d
      module procedure mpp_chksum_r4_1d
      module procedure mpp_chksum_r4_2d
      module procedure mpp_chksum_r4_3d
      module procedure mpp_chksum_r4_4d
      module procedure mpp_chksum_r4_5d
-#endif
 #ifdef OVERLOAD_C4
      module procedure mpp_chksum_c4_0d
      module procedure mpp_chksum_c4_1d
