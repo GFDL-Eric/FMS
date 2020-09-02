@@ -66,10 +66,6 @@ program test   !test various aspects of mpp_mod
     call test_time_transmit()
   if( pe.EQ.root ) print *, '------------------> Finished test_time_transmit <------------------'
 
-  if( pe.EQ.root ) print *, '------------------> Calling test_mpp_sum <------------------'
-    call test_mpp_sum()
-  if( pe.EQ.root ) print *, '------------------> Finished test_mpp_sum <------------------'
-
   if( pe.EQ.root ) print *, '------------------> Calling test_mpp_max <------------------'
     call test_mpp_max()
   if( pe.EQ.root ) print *, '------------------> Finished test_mpp_max <------------------'
@@ -137,21 +133,6 @@ contains
   end do
 
   end subroutine test_time_transmit
-
-  subroutine test_mpp_sum()
-
-  a = real(pe+1)
-  call mpp_sync()
-  call SYSTEM_CLOCK(tick0)
-  call mpp_sum(a(1:1000),1000)
-  call SYSTEM_CLOCK(tick)
-  dt = real(tick-tick0)/ticks_per_sec
-  dt = max( dt, epsilon(dt) )
-  if( pe.EQ.root )write( out_unit,'(a,2i6,f9.1,i8,f13.6,f8.2/)' ) &
-       'mpp_sum: pe, npes, sum(pe+1), length, time, bw(Mb/s)=', pe, npes, a(1), n, dt, n*8e-6/dt
-  call mpp_clock_end(id)
-
-  end subroutine test_mpp_sum
 
   subroutine test_mpp_max
 

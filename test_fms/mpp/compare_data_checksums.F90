@@ -22,6 +22,7 @@ module compare_data_checksums
 
 use mpp_mod, only : mpp_root_pe, mpp_chksum, mpp_error, mpp_sync_self, mpp_pe
 use mpp_mod, only : FATAL, NOTE
+use platform_mod
 
 implicit none
 private
@@ -38,15 +39,13 @@ interface compare_checksums
   module procedure compare_checksums_3D_r8
 end interface compare_checksums
 
-#include <fms_platform.h>
-
 contains
 
   !> compare checksums of 2D 32-bit real arrays 
   subroutine compare_checksums_2D_r4( a, b, chk_str )
-    real(FLOAT_KIND), intent(in), dimension(:,:) :: a, b !< 2D arrays to compare
+    real(kind=r4_kind), intent(in), dimension(:,:) :: a, b !< 2D arrays to compare
     character(len=*), intent(in) :: chk_str
-    integer(LONG_KIND) :: sum1, sum2
+    integer(kind=i8_kind) :: sum1, sum2
     integer :: i, j
     integer :: pe
     !> @note can't call mpp_sync here since there might be different number of tiles on each pe.
@@ -83,9 +82,9 @@ contains
    
   !> Compare the checksums of 2 3D 32-bit real arrays
   subroutine compare_checksums_3D_r4( a, b, string )
-     real(FLOAT_KIND), intent(in), dimension(:,:,:) :: a, b !< 3D 64-bit real arrays to compare
+     real(kind=r4_kind), intent(in), dimension(:,:,:) :: a, b !< 3D 64-bit real arrays to compare
      character(len=*), intent(in) :: string
-     integer(LONG_KIND) :: sum1, sum2
+     integer(kind=i8_kind) :: sum1, sum2
      integer :: i, j, k
      integer :: pe
     ! z1l can not call mpp_sync here since there might be different number of tiles on each pe.
@@ -124,9 +123,9 @@ contains
   end subroutine compare_checksums_3D_r4
   !> compare checksums of 2D 64-bit real arrays 
   subroutine compare_checksums_2D_r8( a, b, chk_str )
-    real(DOUBLE_KIND), intent(in), dimension(:,:) :: a, b !< 2D arrays to compare
+    real(kind=r8_kind), intent(in), dimension(:,:) :: a, b !< 2D arrays to compare
     character(len=*), intent(in) :: chk_str
-    integer(LONG_KIND) :: sum1, sum2
+    integer(kind=i8_kind) :: sum1, sum2
     integer :: i, j
     integer :: pe
  
@@ -164,9 +163,9 @@ contains
    
   !> Compare the checksums of 2 3D 64-bit real arrays
   subroutine compare_checksums_3D_r8( a, b, string )
-     real(DOUBLE_KIND), intent(in), dimension(:,:,:) :: a, b !< 3D 64-bit real arrays to compare
+     real(kind=r8_kind), intent(in), dimension(:,:,:) :: a, b !< 3D 64-bit real arrays to compare
      character(len=*), intent(in) :: string
-     integer(LONG_KIND) :: sum1, sum2
+     integer(kind=i8_kind) :: sum1, sum2
      integer :: i, j, k
      integer :: pe
     ! z1l can not call mpp_sync here since there might be different number of tiles on each pe.

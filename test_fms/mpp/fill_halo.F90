@@ -21,6 +21,8 @@
 !! It is required by test_mpp_update_domains
 module fill_halo
 
+use :: platform_mod
+
 implicit none
 private
 integer :: whalo = 2, ehalo = 2, shalo = 2, nhalo = 2
@@ -70,12 +72,12 @@ interface fill_folded_west_halo
   module procedure fill_folded_west_halo_r8
   module procedure fill_folded_west_halo_r4
 end interface fill_folded_west_halo
-#include <fms_platform.h>
+
 contains
 
   !> fill the halo region of a 64-bit real array with zeros
   subroutine fill_halo_zero_r8(data, whalo, ehalo, shalo, nhalo, xshift, yshift, isc, iec, jsc, jec, isd, ied, jsd, jed)
-    real(DOUBLE_KIND), dimension(isd:,jsd:,:), intent(inout) :: data
+    real(kind=r8_kind), dimension(isd:,jsd:,:), intent(inout) :: data
     integer,                         intent(in) :: isc, iec, jsc, jec, isd, ied, jsd, jed
     integer,                         intent(in) :: whalo, ehalo, shalo, nhalo, xshift, yshift
 
@@ -98,7 +100,7 @@ contains
  
   !> fill the halo region of a 32-bit real array with zeros
   subroutine fill_halo_zero_r4(data, whalo, ehalo, shalo, nhalo, xshift, yshift, isc, iec, jsc, jec, isd, ied, jsd, jed)
-    real(FLOAT_KIND), dimension(isd:,jsd:,:), intent(inout) :: data
+    real(kind=r4_kind), dimension(isd:,jsd:,:), intent(inout) :: data
     integer,                         intent(in) :: isc, iec, jsc, jec, isd, ied, jsd, jed
     integer,                         intent(in) :: whalo, ehalo, shalo, nhalo, xshift, yshift
 
@@ -122,8 +124,8 @@ contains
  
   !> fill the halo region of 64-bit array on a regular grid
   subroutine fill_regular_refinement_halo_r8( data, data_all, ni, nj, tm, te, tse, ts, tsw, tw, tnw, tn, tne, ioff, joff )
-    real(DOUBLE_KIND), dimension(1-whalo:,1-shalo:,:), intent(inout) :: data
-    real(DOUBLE_KIND), dimension(:,:,:,:),             intent(in)    :: data_all
+    real(kind=r8_kind), dimension(1-whalo:,1-shalo:,:), intent(inout) :: data
+    real(kind=r8_kind), dimension(:,:,:,:),             intent(in)    :: data_all
     integer, dimension(:),                intent(in)    :: ni, nj
     integer,                              intent(in)    :: tm, te, tse, ts, tsw, tw, tnw, tn, tne
     integer,                              intent(in)    :: ioff, joff
@@ -150,8 +152,8 @@ contains
 
   !> fill the halo region of 32-bit array on a regular grid
   subroutine fill_regular_refinement_halo_r4( data, data_all, ni, nj, tm, te, tse, ts, tsw, tw, tnw, tn, tne, ioff, joff )
-    real(FLOAT_KIND), dimension(1-whalo:,1-shalo:,:), intent(inout) :: data
-    real(FLOAT_KIND), dimension(:,:,:,:),             intent(in)    :: data_all
+    real(kind=r4_kind), dimension(1-whalo:,1-shalo:,:), intent(inout) :: data
+    real(kind=r4_kind), dimension(:,:,:,:),             intent(in)    :: data_all
     integer, dimension(:),                intent(in)    :: ni, nj
     integer,                              intent(in)    :: tm, te, tse, ts, tsw, tw, tnw, tn, tne
     integer,                              intent(in)    :: ioff, joff
@@ -178,8 +180,8 @@ contains
 
   ! Fill the halo points of a 64-bit real array on the regular mosaic grid
   subroutine fill_regular_mosaic_halo_r8(data, data_all, te, tse, ts, tsw, tw, tnw, tn, tne)
-    real(DOUBLE_KIND), dimension(1-whalo:,1-shalo:,:), intent(inout) :: data
-    real(DOUBLE_KIND), dimension(:,:,:,:),             intent(in)    :: data_all
+    real(kind=r8_kind), dimension(1-whalo:,1-shalo:,:), intent(inout) :: data
+    real(kind=r8_kind), dimension(:,:,:,:),             intent(in)    :: data_all
     integer, intent(in)    :: te, tse, ts, tsw, tw, tnw, tn, tne
 
     data(nx+1:nx+ehalo, 1:ny,          :) = data_all(1:ehalo,       1:ny,          :, te) ! east
@@ -194,8 +196,8 @@ contains
 
   !> Fill the halo points of a 32-bit real array on the regular mosaic grid
   subroutine fill_regular_mosaic_halo_r4(data, data_all, te, tse, ts, tsw, tw, tnw, tn, tne)
-    real(FLOAT_KIND), dimension(1-whalo:,1-shalo:,:), intent(inout) :: data
-    real(FLOAT_KIND), dimension(:,:,:,:),             intent(in)    :: data_all
+    real(kind=r4_kind), dimension(1-whalo:,1-shalo:,:), intent(inout) :: data
+    real(kind=r4_kind), dimension(:,:,:,:),             intent(in)    :: data_all
     integer, intent(in)    :: te, tse, ts, tsw, tw, tnw, tn, tne
 
     data(nx+1:nx+ehalo, 1:ny,          :) = data_all(1:ehalo,       1:ny,          :, te) ! east
@@ -210,7 +212,7 @@ contains
 
   !> Fill the halo region of a 64-bit array on a domain with a folded north edge
   subroutine fill_folded_north_halo_r8(data, ioff, joff, ishift, jshift, sign)
-    real(DOUBLE_KIND), dimension(1-whalo:,1-shalo:,:), intent(inout) :: data
+    real(kind=r8_kind), dimension(1-whalo:,1-shalo:,:), intent(inout) :: data
     integer, intent(in) :: ioff, joff, ishift, jshift, sign
     ! local
     integer :: nxp, nyp, m1, m2
@@ -231,7 +233,7 @@ contains
 
   !> Fill the halo region of a 32-bit array on a domain with a folded north edge
   subroutine fill_folded_north_halo_r4(data, ioff, joff, ishift, jshift, sign)
-    real(FLOAT_KIND), dimension(1-whalo:,1-shalo:,:), intent(inout) :: data
+    real(kind=r4_kind), dimension(1-whalo:,1-shalo:,:), intent(inout) :: data
     integer, intent(in) :: ioff, joff, ishift, jshift, sign
     ! local
     integer :: nxp, nyp, m1, m2
@@ -253,7 +255,7 @@ contains
 
   !> Fill the halo region of a 64-bit array on a domain with a folded south edge
   subroutine fill_folded_south_halo_r8(data, ioff, joff, ishift, jshift, sign)
-    real(DOUBLE_KIND), dimension(1-whalo:,1-shalo:,:), intent(inout) :: data
+    real(kind=r8_kind), dimension(1-whalo:,1-shalo:,:), intent(inout) :: data
     integer, intent(in) :: ioff, joff, ishift, jshift, sign
     ! local
     integer  :: nxp, nyp, m1, m2
@@ -275,7 +277,7 @@ contains
 
   !> Fill the halo region of a 32-bit array on a domain with a folded south edge
   subroutine fill_folded_south_halo_r4(data, ioff, joff, ishift, jshift, sign)
-    real(FLOAT_KIND), dimension(1-whalo:,1-shalo:,:), intent(inout) :: data
+    real(kind=r4_kind), dimension(1-whalo:,1-shalo:,:), intent(inout) :: data
     integer, intent(in) :: ioff, joff, ishift, jshift, sign
     ! local
     integer  :: nxp, nyp, m1, m2
@@ -297,7 +299,7 @@ contains
 
   !> Fill the halo region of a 64-bit array on a domain with a folded west edge
   subroutine fill_folded_west_halo_r8(data, ioff, joff, ishift, jshift, sign)
-    real(DOUBLE_KIND), dimension(1-whalo:,1-shalo:,:), intent(inout) :: data
+    real(kind=r8_kind), dimension(1-whalo:,1-shalo:,:), intent(inout) :: data
     integer, intent(in) :: ioff, joff, ishift, jshift, sign
     ! local
     integer :: nxp, nyp, m1, m2
@@ -318,7 +320,7 @@ contains
 
   !> Fill the halo region of a 32-bit array on a domain with a folded west edge
   subroutine fill_folded_west_halo_r4(data, ioff, joff, ishift, jshift, sign)
-    real(FLOAT_KIND), dimension(1-whalo:,1-shalo:,:), intent(inout) :: data
+    real(kind=r4_kind), dimension(1-whalo:,1-shalo:,:), intent(inout) :: data
     integer, intent(in) :: ioff, joff, ishift, jshift, sign
     ! local
     integer :: nxp, nyp, m1, m2
@@ -339,7 +341,7 @@ contains
 
   !> Fill the halo region of a 64-bit array on a domain with a folded east edge
   subroutine fill_folded_east_halo_r8(data, ioff, joff, ishift, jshift, sign)
-    real(DOUBLE_KIND), dimension(1-whalo:,1-shalo:,:), intent(inout) :: data
+    real(kind=r8_kind), dimension(1-whalo:,1-shalo:,:), intent(inout) :: data
     integer, intent(in) :: ioff, joff, ishift, jshift, sign
     ! local
     integer :: nxp, nyp, m1, m2
@@ -361,7 +363,7 @@ contains
 
   !> Fill the halo region of a 32-bit array on a domain with a folded east edge
   subroutine fill_folded_east_halo_r4(data, ioff, joff, ishift, jshift, sign)
-    real(FLOAT_KIND), dimension(1-whalo:,1-shalo:,:), intent(inout) :: data
+    real(kind=r4_kind), dimension(1-whalo:,1-shalo:,:), intent(inout) :: data
     integer, intent(in) :: ioff, joff, ishift, jshift, sign
     ! local
     integer :: nxp, nyp, m1, m2

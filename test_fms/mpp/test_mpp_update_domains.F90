@@ -45,6 +45,7 @@ program test_mpp_update_domains
   use mpp_domains_mod, only : mpp_get_global_domain, ZERO, NINETY, MINUS_NINETY
   use mpp_domains_mod, only : mpp_deallocate_domain
   use mpp_io_mod, only: mpp_io_init
+  use platform_mod
 
   implicit none
 
@@ -66,6 +67,7 @@ program test_mpp_update_domains
   integer :: layout_ensemble(2) = (/0,0/)
   !> Initialize mpp and mpp IO modules
   call mpp_init(test_level=mpp_init_test_requests_allocated)
+  call mpp_domains_init(MPP_DOMAIN_TIME)
   call mpp_io_init()
   call mpp_domains_set_stack_size(stackmax)
   pe = mpp_pe()
@@ -103,17 +105,18 @@ program test_mpp_update_domains
     call test_subset_update_r8
     call test_subset_update_r4
   endif
+  call mpp_domains_exit()
   !> Finalize mpp
   call MPI_FINALIZE(ierr)
   contains
-#include <fms_platform.h>
+
   !> Perform simple addition on 64-bit real arrays in different domain configurations and update the domains
   subroutine test_halo_update_r8( domain_type )
     character(len=*), intent(in) :: domain_type !< the domain type that will be tested
-    real(DOUBLE_KIND), allocatable, dimension(:,:,:) :: xr8, x1r8, x2r8, x3r8, x4r8
-    real(DOUBLE_KIND), allocatable, dimension(:,:,:) :: yr8, y1r8, y2r8, y3r8, y4r8
+    real(kind=r8_kind), allocatable, dimension(:,:,:) :: xr8, x1r8, x2r8, x3r8, x4r8
+    real(kind=r8_kind), allocatable, dimension(:,:,:) :: yr8, y1r8, y2r8, y3r8, y4r8
     type(domain2D) :: domain
-    real(DOUBLE_KIND),    allocatable :: global1r8(:,:,:), global2r8(:,:,:), globalr8(:,:,:)
+    real(kind=r8_kind),    allocatable :: global1r8(:,:,:), global2r8(:,:,:), globalr8(:,:,:)
     logical, allocatable :: maskmap(:,:)
     integer              :: shift, i, xhalo, yhalo
     logical              :: is_symmetry, folded_south, folded_west, folded_east
@@ -502,10 +505,10 @@ program test_mpp_update_domains
   !> Perform simple addition on 32-bit real arrays in different domain configurations and update the domains
   subroutine test_halo_update_r4( domain_type )
    character(len=*), intent(in) :: domain_type !< the domain type that will be tested
-   real(FLOAT_KIND), allocatable, dimension(:,:,:) :: xr4, x1r4, x2r4, x3r4, x4r4
-   real(FLOAT_KIND), allocatable, dimension(:,:,:) :: yr4, y1r4, y2r4, y3r4, y4r4
+   real(kind=r4_kind), allocatable, dimension(:,:,:) :: xr4, x1r4, x2r4, x3r4, x4r4
+   real(kind=r4_kind), allocatable, dimension(:,:,:) :: yr4, y1r4, y2r4, y3r4, y4r4
    type(domain2D) :: domain
-   real(FLOAT_KIND),    allocatable :: global1r4(:,:,:), global2r4(:,:,:), globalr4(:,:,:)
+   real(kind=r4_kind),    allocatable :: global1r4(:,:,:), global2r4(:,:,:), globalr4(:,:,:)
    logical, allocatable :: maskmap(:,:)
    integer              :: shift, i, xhalo, yhalo
    logical              :: is_symmetry, folded_south, folded_west, folded_east
@@ -889,9 +892,9 @@ program test_mpp_update_domains
  !> test a domain update of a 64-bit 3D array on a 9-pe subset of total allotted pes
  !> @note requires at least 16 pes
  subroutine test_subset_update_r8( )
-   real(DOUBLE_KIND), allocatable, dimension(:,:,:) :: x
+   real(kind=r8_kind), allocatable, dimension(:,:,:) :: x
    type(domain2D) :: domain
-   real(DOUBLE_KIND), allocatable :: global(:,:,:)
+   real(kind=r8_kind), allocatable :: global(:,:,:)
    integer              :: i, xhalo, yhalo
    integer              :: is, ie, js, je, isd, ied, jsd, jed
    integer :: pes9(9)=(/1,2,4,6,8,10,12,13,15/)
@@ -947,9 +950,9 @@ program test_mpp_update_domains
  !> test a domain update of a 32-bit 3D array on a 9-pe subset of total allotted pes
  !> @note requires at least 16 pes
  subroutine test_subset_update_r4( )
-   real(FLOAT_KIND), allocatable, dimension(:,:,:) :: x
+   real(kind=r4_kind), allocatable, dimension(:,:,:) :: x
    type(domain2D) :: domain
-   real(FLOAT_KIND), allocatable :: global(:,:,:)
+   real(kind=r4_kind), allocatable :: global(:,:,:)
    integer              :: i, xhalo, yhalo
    integer              :: is, ie, js, je, isd, ied, jsd, jed
    integer :: pes9(9)=(/1,2,4,6,8,10,12,13,15/)
