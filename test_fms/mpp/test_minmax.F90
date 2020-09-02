@@ -19,7 +19,7 @@
 program test   !test mpp_min and mpp_max functions for various ints and reals
 #include <fms_platform.h>
 
-  use mpp_mod, only : mpp_init, mpp_exit, mpp_pe, mpp_npes, mpp_root_pe, stdout
+  use mpp_mod, only : mpp_init, mpp_pe, mpp_npes, mpp_root_pe, stdout
   use mpp_mod, only : mpp_clock_id, mpp_clock_begin, mpp_clock_end, mpp_sync
   use mpp_mod, only : mpp_declare_pelist, mpp_set_current_pelist, mpp_set_stack_size
   use mpp_mod, only : mpp_broadcast, mpp_sum, mpp_min, mpp_max
@@ -29,9 +29,9 @@ program test   !test mpp_min and mpp_max functions for various ints and reals
   integer, parameter              :: n=1048576
   real(FLOAT_KIND), allocatable, dimension(:) :: a
   real(DOUBLE_KIND), allocatable, dimension(:) :: a8
-  integer                         :: id, pe, npes, root, i, out_unit
+  integer                         :: id, pe, npes, root, i, out_unit, ierr
 
-  call mpp_init()
+  call mpp_init(0)
   call mpp_set_stack_size(3145746)
   pe = mpp_pe()
   npes = mpp_npes()
@@ -56,7 +56,7 @@ program test   !test mpp_min and mpp_max functions for various ints and reals
   if( pe.EQ.root ) print *, '------------------> Finished test_mpp_min_r8 <------------------'
 
   deallocate( a, a8 )
-  call mpp_exit()
+  call MPI_FINALIZE(ierr)
 
 contains
 
