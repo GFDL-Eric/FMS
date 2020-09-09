@@ -92,9 +92,11 @@ contains
      end if
      if( pe.EQ.root )print *, 'sum(pe+1) from 0 to npes-2=', a(1)
      a = real(pe+1, kind=r4_kind)
-     if( pe.NE.npes-1 )call mpp_max( a(1), (/(i,i=0,npes-2)/) )
-     if (a(1).NE.real(npes-1, kind=r4_kind)) then
-       call mpp_error(FATAL, "The r4 mpp_max function for all but the last pe did not return the appropriate answer")
+     if( pe.NE.npes-1 ) then
+       call mpp_max( a(1), (/(i,i=0,npes-2)/) )
+       if (a(1).NE.real(npes-1, kind=r4_kind)) then
+         call mpp_error(FATAL, "The r4 mpp_max function for all but the last pe did not return the appropriate answer")
+       end if
      end if
      if( pe.EQ.root )print *, 'max(pe+1) from 0 to npes-2=', a(1)
   end if
@@ -130,9 +132,11 @@ contains
      end if
      if( pe.EQ.root )print *, 'sum(pe+1) from 0 to npes-2=', a(1)
      a = real(pe+1, kind=r4_kind)
-     if( pe.NE.npes-1 )call mpp_min( a(1), (/(i,i=0,npes-2)/) )
-     if (a(1).NE.real(1, kind=r4_kind)) then
-       call mpp_error(FATAL, "The r4 mpp_min function for all but the last pe did not return the appropriate answer")
+     if( pe.NE.npes-1 )then
+       call mpp_min( a(1), (/(i,i=0,npes-2)/) )
+       if (a(1).NE.real(1, kind=r4_kind)) then
+         call mpp_error(FATAL, "The r4 mpp_min function for all but the last pe did not return the appropriate answer")
+       end if
      end if
      if( pe.EQ.root )print *, 'min(pe+1) from 0 to npes-2=', a(1)
   end if
@@ -168,9 +172,11 @@ contains
      end if
      if( pe.EQ.root )print *, 'sum(pe+1) from 0 to npes-2=', a8(1)
      a8 = real(pe+1, kind=r8_kind)
-     if( pe.NE.npes-1 )call mpp_max( a8(1), (/(i,i=0,npes-2)/) )
-     if (a8(1).NE.real(npes-1, kind=r8_kind)) then
-       call mpp_error(FATAL, "The r8 mpp_max function for all but the last pe did not return the appropriate answer")
+     if( pe.NE.npes-1 ) then
+       call mpp_max( a8(1), (/(i,i=0,npes-2)/) )
+       if (a8(1).NE.real(npes-1, kind=r8_kind)) then
+         call mpp_error(FATAL, "The r8 mpp_max function for all but the last pe did not return the appropriate answer")
+       end if
      end if
      if( pe.EQ.root )print *, 'max(pe+1) from 0 to npes-2=', a8(1)
   end if
@@ -206,9 +212,11 @@ contains
      end if
      if( pe.EQ.root )print *, 'sum(pe+1) from 0 to npes-2=', a8(1)
      a8 = real(pe+1, kind=r8_kind)
-     if( pe.NE.npes-1 )call mpp_min( a8(1), (/(i,i=0,npes-2)/) )
-     if (a8(1).NE.real(1, kind=r8_kind)) then
-       call mpp_error(FATAL, "The r8 mpp_min function for all but the last pe did not return the appropriate answer")
+     if( pe.NE.npes-1 ) then
+       call mpp_min( a8(1), (/(i,i=0,npes-2)/) )
+       if (a8(1).NE.real(1, kind=r8_kind)) then
+         call mpp_error(FATAL, "The r8 mpp_min function for all but the last pe did not return the appropriate answer")
+       end if
      end if
      if( pe.EQ.root )print *, 'min(pe+1) from 0 to npes-2=', a8(1)
   end if
