@@ -17,18 +17,18 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 program test   !test mpp_min and mpp_max functions for various ints and reals
-#include <fms_platform.h>
 
   use mpp_mod, only : mpp_init, mpp_pe, mpp_npes, mpp_root_pe, stdout
   use mpp_mod, only : mpp_clock_id, mpp_clock_begin, mpp_clock_end, mpp_sync
   use mpp_mod, only : mpp_declare_pelist, mpp_set_current_pelist, mpp_set_stack_size
   use mpp_mod, only : mpp_broadcast, mpp_sum, mpp_min, mpp_max
+  use platform_mod
 
   implicit none
 
   integer, parameter              :: n=1048576
-  real(FLOAT_KIND), allocatable, dimension(:) :: a
-  real(DOUBLE_KIND), allocatable, dimension(:) :: a8
+  real(kind=r4_kind), allocatable, dimension(:) :: a
+  real(kind=r8_kind), allocatable, dimension(:) :: a8
   integer                         :: id, pe, npes, root, i, out_unit, ierr
 
   call mpp_init(0)
@@ -62,7 +62,7 @@ contains
 
   subroutine test_mpp_max_r4
 
-  a = real(pe+1, kind=FLOAT_KIND)
+  a = real(pe+1, kind=r4_kind)
   print *, 'pe,     pe+1 =', pe, a(1)
   call mpp_max( a(1) )
   print *, 'pe, max(pe+1)=', pe, a(1)
@@ -72,10 +72,10 @@ contains
   if( npes.GE.2 )then
      if( pe.EQ.root )print *, 'Test of pelists: bcast, sum and max using PEs 0...npes-2 (excluding last PE)'
      call mpp_declare_pelist( (/(i,i=0,npes-2)/) )
-     a = real(pe+1, kind=FLOAT_KIND)
+     a = real(pe+1, kind=r4_kind)
      if( pe.NE.npes-1 )call mpp_broadcast( a, n, npes-2, (/(i,i=0,npes-2)/) )
      print *, 'bcast(npes-1) from 0 to npes-2=', pe, a(1)
-     a = real(pe+1, kind=FLOAT_KIND)
+     a = real(pe+1, kind=r4_kind)
      if( pe.NE.npes-1 )then
         call mpp_set_current_pelist( (/(i,i=0,npes-2)/) )
         id = mpp_clock_id( 'Partial mpp_sum' )
@@ -84,7 +84,7 @@ contains
         call mpp_clock_end  (id)
      end if
      if( pe.EQ.root )print *, 'sum(pe+1) from 0 to npes-2=', a(1)
-     a = real(pe+1, kind=FLOAT_KIND)
+     a = real(pe+1, kind=r4_kind)
      if( pe.NE.npes-1 )call mpp_max( a(1), (/(i,i=0,npes-2)/) )
      if( pe.EQ.root )print *, 'max(pe+1) from 0 to npes-2=', a(1)
   end if
@@ -94,7 +94,7 @@ contains
 
   subroutine test_mpp_min_r4
 
-  a = real(pe+1, kind=FLOAT_KIND)
+  a = real(pe+1, kind=r4_kind)
   print *, 'pe,     pe+1 =', pe, a(1)
   call mpp_min( a(1) )
   print *, 'pe, min(pe+1)=', pe, a(1)
@@ -104,10 +104,10 @@ contains
   if( npes.GE.2 )then
      if( pe.EQ.root )print *, 'Test of pelists: bcast, sum and min using PEs 0...npes-2 (excluding last PE)'
      call mpp_declare_pelist( (/(i,i=0,npes-2)/) )
-     a = real(pe+1, kind=FLOAT_KIND)
+     a = real(pe+1, kind=r4_kind)
      if( pe.NE.npes-1 )call mpp_broadcast( a, n, npes-2, (/(i,i=0,npes-2)/) )
      print *, 'bcast(npes-1) from 0 to npes-2=', pe, a(1)
-     a = real(pe+1, kind=FLOAT_KIND)
+     a = real(pe+1, kind=r4_kind)
      if( pe.NE.npes-1 )then
         call mpp_set_current_pelist( (/(i,i=0,npes-2)/) )
         id = mpp_clock_id( 'Partial mpp_sum' )
@@ -116,7 +116,7 @@ contains
         call mpp_clock_end  (id)
      end if
      if( pe.EQ.root )print *, 'sum(pe+1) from 0 to npes-2=', a(1)
-     a = real(pe+1, kind=FLOAT_KIND)
+     a = real(pe+1, kind=r4_kind)
      if( pe.NE.npes-1 )call mpp_min( a(1), (/(i,i=0,npes-2)/) )
      if( pe.EQ.root )print *, 'min(pe+1) from 0 to npes-2=', a(1)
   end if
@@ -126,7 +126,7 @@ contains
 
   subroutine test_mpp_max_r8
 
-  a8 = real(pe+1, kind=DOUBLE_KIND)
+  a8 = real(pe+1, kind=r8_kind)
 !  print *, 'pe,     pe+1 =', pe, a8(1)
   call mpp_max( a8(1) )
   print *, 'pe, max(pe+1)=', pe, a8(1)
@@ -136,10 +136,10 @@ contains
   if( npes.GE.2 )then
      if( pe.EQ.root )print *, 'Test of pelists: bcast, sum and max using PEs 0...npes-2 (excluding last PE)'
      call mpp_declare_pelist( (/(i,i=0,npes-2)/) )
-     a8 = real(pe+1, kind=DOUBLE_KIND)
+     a8 = real(pe+1, kind=r8_kind)
      if( pe.NE.npes-1 )call mpp_broadcast( a8, n, npes-2, (/(i,i=0,npes-2)/) )
      print *, 'bcast(npes-1) from 0 to npes-2=', pe, a8(1)
-     a8 = real(pe+1, kind=DOUBLE_KIND)
+     a8 = real(pe+1, kind=r8_kind)
      if( pe.NE.npes-1 )then
         call mpp_set_current_pelist( (/(i,i=0,npes-2)/) )
         id = mpp_clock_id( 'Partial mpp_sum' )
@@ -148,7 +148,7 @@ contains
         call mpp_clock_end  (id)
      end if
      if( pe.EQ.root )print *, 'sum(pe+1) from 0 to npes-2=', a8(1)
-     a8 = real(pe+1, kind=DOUBLE_KIND)
+     a8 = real(pe+1, kind=r8_kind)
      if( pe.NE.npes-1 )call mpp_max( a8(1), (/(i,i=0,npes-2)/) )
      if( pe.EQ.root )print *, 'max(pe+1) from 0 to npes-2=', a8(1)
   end if
@@ -158,7 +158,7 @@ contains
 
   subroutine test_mpp_min_r8
 
-  a8 = real(pe+1, kind=DOUBLE_KIND)
+  a8 = real(pe+1, kind=r8_kind)
   print *, 'pe,     pe+1 =', pe, a8(1)
   call mpp_min( a8(1) )
   print *, 'pe, min(pe+1)=', pe, a8(1)
@@ -168,10 +168,10 @@ contains
   if( npes.GE.2 )then
      if( pe.EQ.root )print *, 'Test of pelists: bcast, sum and min using PEs 0...npes-2 (excluding last PE)'
      call mpp_declare_pelist( (/(i,i=0,npes-2)/) )
-     a8 = real(pe+1, kind=DOUBLE_KIND)
+     a8 = real(pe+1, kind=r8_kind)
      if( pe.NE.npes-1 )call mpp_broadcast( a8, n, npes-2, (/(i,i=0,npes-2)/) )
      print *, 'bcast(npes-1) from 0 to npes-2=', pe, a8(1)
-     a8 = real(pe+1, kind=DOUBLE_KIND)
+     a8 = real(pe+1, kind=r8_kind)
      if( pe.NE.npes-1 )then
         call mpp_set_current_pelist( (/(i,i=0,npes-2)/) )
         id = mpp_clock_id( 'Partial mpp_sum' )
@@ -180,7 +180,7 @@ contains
         call mpp_clock_end  (id)
      end if
      if( pe.EQ.root )print *, 'sum(pe+1) from 0 to npes-2=', a8(1)
-     a8 = real(pe+1, kind=DOUBLE_KIND)
+     a8 = real(pe+1, kind=r8_kind)
      if( pe.NE.npes-1 )call mpp_min( a8(1), (/(i,i=0,npes-2)/) )
      if( pe.EQ.root )print *, 'min(pe+1) from 0 to npes-2=', a8(1)
   end if
