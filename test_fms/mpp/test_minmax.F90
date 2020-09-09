@@ -31,7 +31,7 @@ program test
   implicit none
 
   integer, parameter              :: n=1048576
-  real(kind=r4_kind), allocatable, dimension(:) :: a
+  real(kind=r4_kind), allocatable, dimension(:) :: a4
   real(kind=r8_kind), allocatable, dimension(:) :: a8
   integer                         :: id, pe, npes, root, i, out_unit, ierr
 
@@ -41,187 +41,159 @@ program test
   npes = mpp_npes()
   root = mpp_root_pe()
   out_unit = stdout()
-  allocate( a(n), a8(n) )
+  allocate( a4(n), a8(n) )
 
-  if( pe.EQ.root ) print *, '------------------> Calling test_mpp_max_r4 <------------------'
+  if( pe.EQ.root ) print *, '-> Calling test_mpp_max_r4 <-------------------'
     call test_mpp_max_r4()
-  if( pe.EQ.root ) print *, '------------------> Finished test_mpp_max_r4 <------------------'
+  if( pe.EQ.root ) print *, '-> test_mpp_max_r4: <------------------ Passed!'
 
-  if( pe.EQ.root ) print *, '------------------> Calling test_mpp_min_r4 <------------------'
-    call test_mpp_min_r4()
-  if( pe.EQ.root ) print *, '------------------> Finished test_mpp_min_r4 <------------------'
+  if( npes.GE.2 ) then
+    if( pe.EQ.root ) print *, '-> Calling test_mpp_max_with_pe_r4 <-----------'
+      call test_mpp_max_with_pe_r4()
+    if( pe.EQ.root ) print *, '-> test_mpp_max_with_pe_r4: <---------- Passed!'
+  else
+    if( pe.EQ.root ) print *, '-> test_mpp_max_with_pe_r4: <- (one pe) Skipped'
+  end if
 
-  if( pe.EQ.root ) print *, '------------------> Calling test_mpp_max_r8 <------------------'
+  if( pe.EQ.root ) print *, '-> Calling test_mpp_max_r8 <-------------------'
     call test_mpp_max_r8()
-  if( pe.EQ.root ) print *, '------------------> Finished test_mpp_max_r8 <------------------'
+  if( pe.EQ.root ) print *, '-> test_mpp_max_r8: <------------------ Passed!'
 
-  if( pe.EQ.root ) print *, '------------------> Calling test_mpp_min_r8 <------------------'
+  if( npes.GE.2 ) then
+    if( pe.EQ.root ) print *, '-> Calling test_mpp_max_with_pe_r8 <-----------'
+      call test_mpp_max_with_pe_r8()
+    if( pe.EQ.root ) print *, '-> test_mpp_max_with_pe_r8: <---------- Passed!'
+  else
+    if( pe.EQ.root ) print *, '-> test_mpp_max_with_pe_r8: <- (one pe) Skipped'
+  end if
+
+  if( pe.EQ.root ) print *, '-> Calling test_mpp_min_r4 <-------------------'
+    call test_mpp_min_r4()
+  if( pe.EQ.root ) print *, '-> test_mpp_min_r4: <------------------ Passed!'
+
+  if( npes.GE.2 ) then
+    if( pe.EQ.root ) print *, '-> Calling test_mpp_min_with_pe_r4 <-----------'
+      call test_mpp_min_with_pe_r4()
+    if( pe.EQ.root ) print *, '-> test_mpp_min_with_pe_r4: <---------- Passed!'
+  else
+    if( pe.EQ.root ) print *, '-> test_mpp_min_with_pe_r4: <- (one pe) Skipped'
+  end if
+
+  if( pe.EQ.root ) print *, '-> Calling test_mpp_min_r8 <-------------------'
     call test_mpp_min_r8()
-  if( pe.EQ.root ) print *, '------------------> Finished test_mpp_min_r8 <------------------'
+  if( pe.EQ.root ) print *, '-> test_mpp_min_r8: <------------------ Passed!'
 
-  deallocate( a, a8 )
+  if( npes.GE.2 ) then
+    if( pe.EQ.root ) print *, '-> Calling test_mpp_min_with_pe_r8 <-----------'
+      call test_mpp_min_with_pe_r8()
+    if( pe.EQ.root ) print *, '-> test_mpp_min_with_pe_r8: <---------- Passed!'
+  else
+    if( pe.EQ.root ) print *, '-> test_mpp_min_with_pe_r8: <- (one pe) Skipped'
+  end if
+
+  deallocate( a4, a8 )
   call MPI_FINALIZE(ierr)
 
 contains
 
   subroutine test_mpp_max_r4
-
-  a = real(pe+1, kind=r4_kind)
-  print *, 'pe,     pe+1 =', pe, a(1)
-  call mpp_max( a(1) )
-  if (a(1).NE.real(npes, kind=r4_kind)) then
-    call mpp_error(FATAL, "The r4 mpp_max function for all npes did not return the appropriate answer")
-  end if
-  print *, 'pe, max(pe+1)=', pe, a(1)
-  !pelist check
-  call mpp_sync()
-  call flush(out_unit)
-  if( npes.GE.2 )then
-     if( pe.EQ.root )print *, 'Test of pelists: bcast, sum and max using PEs 0...npes-2 (excluding last PE)'
-     call mpp_declare_pelist( (/(i,i=0,npes-2)/) )
-     a = real(pe+1, kind=r4_kind)
-     if( pe.NE.npes-1 )call mpp_broadcast( a, n, npes-2, (/(i,i=0,npes-2)/) )
-     print *, 'bcast(npes-1) from 0 to npes-2=', pe, a(1)
-     a = real(pe+1, kind=r4_kind)
-     if( pe.NE.npes-1 )then
-        call mpp_set_current_pelist( (/(i,i=0,npes-2)/) )
-        id = mpp_clock_id( 'Partial mpp_sum' )
-        call mpp_clock_begin(id)
-        call mpp_sum( a(1:1000), 1000, (/(i,i=0,npes-2)/) )
-        call mpp_clock_end  (id)
-     end if
-     if( pe.EQ.root )print *, 'sum(pe+1) from 0 to npes-2=', a(1)
-     a = real(pe+1, kind=r4_kind)
-     if( pe.NE.npes-1 ) then
-       call mpp_max( a(1), (/(i,i=0,npes-2)/) )
-       if (a(1).NE.real(npes-1, kind=r4_kind)) then
-         call mpp_error(FATAL, "The r4 mpp_max function for all but the last pe did not return the appropriate answer")
-       end if
-     end if
-     if( pe.EQ.root )print *, 'max(pe+1) from 0 to npes-2=', a(1)
-  end if
-  call mpp_set_current_pelist()
-
+    a4 = real(pe+1, kind=r4_kind)
+    call mpp_max( a4(1) )
+    if (a4(1).NE.real(npes, kind=r4_kind)) then
+      call mpp_error(FATAL, "The r4 mpp_max function for all npes did not return the appropriate answer")
+    end if
+    call mpp_sync()
+    call flush(out_unit)
   end subroutine test_mpp_max_r4
 
-  subroutine test_mpp_min_r4
-
-  a = real(pe+1, kind=r4_kind)
-  print *, 'pe,     pe+1 =', pe, a(1)
-  call mpp_min( a(1) )
-  if (a(1).NE.real(1, kind=r4_kind)) then
-    call mpp_error(FATAL, "The r4 mpp_min function for all npes did not return the appropriate answer")
-  end if
-  print *, 'pe, min(pe+1)=', pe, a(1)
-  !pelist check
-  call mpp_sync()
-  call flush(out_unit)
-  if( npes.GE.2 )then
-     if( pe.EQ.root )print *, 'Test of pelists: bcast, sum and min using PEs 0...npes-2 (excluding last PE)'
-     call mpp_declare_pelist( (/(i,i=0,npes-2)/) )
-     a = real(pe+1, kind=r4_kind)
-     if( pe.NE.npes-1 )call mpp_broadcast( a, n, npes-2, (/(i,i=0,npes-2)/) )
-     print *, 'bcast(npes-1) from 0 to npes-2=', pe, a(1)
-     a = real(pe+1, kind=r4_kind)
-     if( pe.NE.npes-1 )then
-        call mpp_set_current_pelist( (/(i,i=0,npes-2)/) )
-        id = mpp_clock_id( 'Partial mpp_sum' )
-        call mpp_clock_begin(id)
-        call mpp_sum( a(1:1000), 1000, (/(i,i=0,npes-2)/) )
-        call mpp_clock_end  (id)
-     end if
-     if( pe.EQ.root )print *, 'sum(pe+1) from 0 to npes-2=', a(1)
-     a = real(pe+1, kind=r4_kind)
-     if( pe.NE.npes-1 )then
-       call mpp_min( a(1), (/(i,i=0,npes-2)/) )
-       if (a(1).NE.real(1, kind=r4_kind)) then
-         call mpp_error(FATAL, "The r4 mpp_min function for all but the last pe did not return the appropriate answer")
-       end if
-     end if
-     if( pe.EQ.root )print *, 'min(pe+1) from 0 to npes-2=', a(1)
-  end if
-  call mpp_set_current_pelist()
-
-  end subroutine test_mpp_min_r4
+  subroutine test_mpp_max_with_pe_r4
+    call mpp_declare_pelist( (/(i,i=0,npes-2)/) )
+    if(pe.NE.npes-1) call mpp_set_current_pelist( (/(i,i=0,npes-2)/) )
+    a4 = real(pe+1, kind=r4_kind)
+    if( pe.NE.npes-1 ) then
+      call mpp_max( a4(1), (/(i,i=0,npes-2)/) )
+      if (a4(1).NE.real(npes-1, kind=r4_kind)) then
+        call mpp_error(FATAL, "The r4 mpp_max function for all but the last pe did not return the appropriate answer")
+      end if
+    end if
+    call mpp_set_current_pelist()
+    call mpp_sync()
+    call flush(out_unit)
+  end subroutine test_mpp_max_with_pe_r4
 
   subroutine test_mpp_max_r8
-
-  a8 = real(pe+1, kind=r8_kind)
-!  print *, 'pe,     pe+1 =', pe, a8(1)
-  call mpp_max( a8(1) )
-  if (a8(1).NE.real(npes, kind=r8_kind)) then
-    call mpp_error(FATAL, "The r8 mpp_max function for all npes did not return the appropriate answer")
-  end if
-  print *, 'pe, max(pe+1)=', pe, a8(1)
-  !pelist check
-  call mpp_sync()
-  call flush(out_unit)
-  if( npes.GE.2 )then
-     if( pe.EQ.root )print *, 'Test of pelists: bcast, sum and max using PEs 0...npes-2 (excluding last PE)'
-     call mpp_declare_pelist( (/(i,i=0,npes-2)/) )
-     a8 = real(pe+1, kind=r8_kind)
-     if( pe.NE.npes-1 )call mpp_broadcast( a8, n, npes-2, (/(i,i=0,npes-2)/) )
-     print *, 'bcast(npes-1) from 0 to npes-2=', pe, a8(1)
-     a8 = real(pe+1, kind=r8_kind)
-     if( pe.NE.npes-1 )then
-        call mpp_set_current_pelist( (/(i,i=0,npes-2)/) )
-        id = mpp_clock_id( 'Partial mpp_sum' )
-        call mpp_clock_begin(id)
-        call mpp_sum( a8(1:1000), 1000, (/(i,i=0,npes-2)/) )
-        call mpp_clock_end  (id)
-     end if
-     if( pe.EQ.root )print *, 'sum(pe+1) from 0 to npes-2=', a8(1)
-     a8 = real(pe+1, kind=r8_kind)
-     if( pe.NE.npes-1 ) then
-       call mpp_max( a8(1), (/(i,i=0,npes-2)/) )
-       if (a8(1).NE.real(npes-1, kind=r8_kind)) then
-         call mpp_error(FATAL, "The r8 mpp_max function for all but the last pe did not return the appropriate answer")
-       end if
-     end if
-     if( pe.EQ.root )print *, 'max(pe+1) from 0 to npes-2=', a8(1)
-  end if
-  call mpp_set_current_pelist()
-
+    a8 = real(pe+1, kind=r8_kind)
+    call mpp_max( a8(1) )
+    if (a8(1).NE.real(npes, kind=r8_kind)) then
+      call mpp_error(FATAL, "The r8 mpp_max function for all npes did not return the appropriate answer")
+    end if
+    call mpp_sync()
+    call flush(out_unit)
   end subroutine test_mpp_max_r8
 
+  subroutine test_mpp_max_with_pe_r8
+    call mpp_declare_pelist( (/(i,i=0,npes-2)/) )
+    if(pe.NE.npes-1) call mpp_set_current_pelist( (/(i,i=0,npes-2)/) )
+    a8 = real(pe+1, kind=r8_kind)
+    if( pe.NE.npes-1 ) then
+      call mpp_max( a8(1), (/(i,i=0,npes-2)/) )
+      if (a8(1).NE.real(npes-1, kind=r8_kind)) then
+        call mpp_error(FATAL, "The r8 mpp_max function for all but the last pe did not return the appropriate answer")
+      end if
+    end if
+    call mpp_set_current_pelist()
+    call mpp_sync()
+    call flush(out_unit)
+  end subroutine test_mpp_max_with_pe_r8
+
+  subroutine test_mpp_min_r4
+    a4 = real(pe+1, kind=r4_kind)
+    call mpp_min( a4(1) )
+    if (a4(1).NE.real(1, kind=r4_kind)) then
+      call mpp_error(FATAL, "The r4 mpp_min function for all npes did not return the appropriate answer")
+    end if
+    call mpp_sync()
+    call flush(out_unit)
+  end subroutine test_mpp_min_r4
+
+  subroutine test_mpp_min_with_pe_r4
+    call mpp_declare_pelist( (/(i,i=0,npes-2)/) )
+    if(pe.NE.npes-1) call mpp_set_current_pelist( (/(i,i=0,npes-2)/) )
+    a4 = real(pe+1, kind=r4_kind)
+    if( pe.NE.npes-1 ) then
+      call mpp_min( a4(1), (/(i,i=0,npes-2)/) )
+      if (a4(1).NE.real(1, kind=r4_kind)) then
+        call mpp_error(FATAL, "The r4 mpp_min function for all but the last pe did not return the appropriate answer")
+      end if
+    end if
+    call mpp_set_current_pelist()
+    call mpp_sync()
+    call flush(out_unit)
+  end subroutine test_mpp_min_with_pe_r4
+
   subroutine test_mpp_min_r8
-
-  a8 = real(pe+1, kind=r8_kind)
-  print *, 'pe,     pe+1 =', pe, a8(1)
-  call mpp_min( a8(1) )
-  if (a8(1).NE.real(1, kind=r8_kind)) then
-    call mpp_error(FATAL, "The r8 mpp_min function for all npes did not return the appropriate answer")
-  end if
-  print *, 'pe, min(pe+1)=', pe, a8(1)
-  !pelist check
-  call mpp_sync()
-  call flush(out_unit)
-  if( npes.GE.2 )then
-     if( pe.EQ.root )print *, 'Test of pelists: bcast, sum and min using PEs 0...npes-2 (excluding last PE)'
-     call mpp_declare_pelist( (/(i,i=0,npes-2)/) )
-     a8 = real(pe+1, kind=r8_kind)
-     if( pe.NE.npes-1 )call mpp_broadcast( a8, n, npes-2, (/(i,i=0,npes-2)/) )
-     print *, 'bcast(npes-1) from 0 to npes-2=', pe, a8(1)
-     a8 = real(pe+1, kind=r8_kind)
-     if( pe.NE.npes-1 )then
-        call mpp_set_current_pelist( (/(i,i=0,npes-2)/) )
-        id = mpp_clock_id( 'Partial mpp_sum' )
-        call mpp_clock_begin(id)
-        call mpp_sum( a8(1:1000), 1000, (/(i,i=0,npes-2)/) )
-        call mpp_clock_end  (id)
-     end if
-     if( pe.EQ.root )print *, 'sum(pe+1) from 0 to npes-2=', a8(1)
-     a8 = real(pe+1, kind=r8_kind)
-     if( pe.NE.npes-1 ) then
-       call mpp_min( a8(1), (/(i,i=0,npes-2)/) )
-       if (a8(1).NE.real(1, kind=r8_kind)) then
-         call mpp_error(FATAL, "The r8 mpp_min function for all but the last pe did not return the appropriate answer")
-       end if
-     end if
-     if( pe.EQ.root )print *, 'min(pe+1) from 0 to npes-2=', a8(1)
-  end if
-  call mpp_set_current_pelist()
-
+    a8 = real(pe+1, kind=r8_kind)
+    call mpp_min( a8(1) )
+    if (a8(1).NE.real(1, kind=r8_kind)) then
+      call mpp_error(FATAL, "The r8 mpp_min function for all npes did not return the appropriate answer")
+    end if
+    call mpp_sync()
+    call flush(out_unit)
   end subroutine test_mpp_min_r8
+
+  subroutine test_mpp_min_with_pe_r8
+    call mpp_declare_pelist( (/(i,i=0,npes-2)/) )
+    if(pe.NE.npes-1) call mpp_set_current_pelist( (/(i,i=0,npes-2)/) )
+    a8 = real(pe+1, kind=r8_kind)
+    if( pe.NE.npes-1 ) then
+      call mpp_min( a8(1), (/(i,i=0,npes-2)/) )
+      if (a8(1).NE.real(1, kind=r8_kind)) then
+        call mpp_error(FATAL, "The r8 mpp_min function for all but the last pe did not return the appropriate answer")
+      end if
+    end if
+    call mpp_set_current_pelist()
+    call mpp_sync()
+    call flush(out_unit)
+  end subroutine test_mpp_min_with_pe_r8
 
 end program test
