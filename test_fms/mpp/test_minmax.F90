@@ -16,12 +16,16 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-program test   !test mpp_min and mpp_max functions for various ints and reals
+!> @author Eric Stofferahn
+!> @brief Test mpp_min and mpp_max functions for various precisions of
+!! reals
+program test
 
   use mpp_mod, only : mpp_init, mpp_pe, mpp_npes, mpp_root_pe, stdout
   use mpp_mod, only : mpp_clock_id, mpp_clock_begin, mpp_clock_end, mpp_sync
   use mpp_mod, only : mpp_declare_pelist, mpp_set_current_pelist, mpp_set_stack_size
   use mpp_mod, only : mpp_broadcast, mpp_sum, mpp_min, mpp_max
+  use mpp_mod, only : mpp_error, FATAL
   use platform_mod
 
   implicit none
@@ -65,6 +69,9 @@ contains
   a = real(pe+1, kind=r4_kind)
   print *, 'pe,     pe+1 =', pe, a(1)
   call mpp_max( a(1) )
+  if (a(1).NE.real(npes, kind=r4_kind)) then
+    call mpp_error(FATAL, "The r4 mpp_max function for all npes did not return the appropriate answer")
+  end if
   print *, 'pe, max(pe+1)=', pe, a(1)
   !pelist check
   call mpp_sync()
@@ -86,6 +93,9 @@ contains
      if( pe.EQ.root )print *, 'sum(pe+1) from 0 to npes-2=', a(1)
      a = real(pe+1, kind=r4_kind)
      if( pe.NE.npes-1 )call mpp_max( a(1), (/(i,i=0,npes-2)/) )
+     if (a(1).NE.real(npes-1, kind=r4_kind)) then
+       call mpp_error(FATAL, "The r4 mpp_max function for all but the last pe did not return the appropriate answer")
+     end if
      if( pe.EQ.root )print *, 'max(pe+1) from 0 to npes-2=', a(1)
   end if
   call mpp_set_current_pelist()
@@ -97,6 +107,9 @@ contains
   a = real(pe+1, kind=r4_kind)
   print *, 'pe,     pe+1 =', pe, a(1)
   call mpp_min( a(1) )
+  if (a(1).NE.real(1, kind=r4_kind)) then
+    call mpp_error(FATAL, "The r4 mpp_min function for all npes did not return the appropriate answer")
+  end if
   print *, 'pe, min(pe+1)=', pe, a(1)
   !pelist check
   call mpp_sync()
@@ -118,6 +131,9 @@ contains
      if( pe.EQ.root )print *, 'sum(pe+1) from 0 to npes-2=', a(1)
      a = real(pe+1, kind=r4_kind)
      if( pe.NE.npes-1 )call mpp_min( a(1), (/(i,i=0,npes-2)/) )
+     if (a(1).NE.real(1, kind=r4_kind)) then
+       call mpp_error(FATAL, "The r4 mpp_min function for all but the last pe did not return the appropriate answer")
+     end if
      if( pe.EQ.root )print *, 'min(pe+1) from 0 to npes-2=', a(1)
   end if
   call mpp_set_current_pelist()
@@ -129,6 +145,9 @@ contains
   a8 = real(pe+1, kind=r8_kind)
 !  print *, 'pe,     pe+1 =', pe, a8(1)
   call mpp_max( a8(1) )
+  if (a8(1).NE.real(npes, kind=r8_kind)) then
+    call mpp_error(FATAL, "The r8 mpp_max function for all npes did not return the appropriate answer")
+  end if
   print *, 'pe, max(pe+1)=', pe, a8(1)
   !pelist check
   call mpp_sync()
@@ -150,6 +169,9 @@ contains
      if( pe.EQ.root )print *, 'sum(pe+1) from 0 to npes-2=', a8(1)
      a8 = real(pe+1, kind=r8_kind)
      if( pe.NE.npes-1 )call mpp_max( a8(1), (/(i,i=0,npes-2)/) )
+     if (a8(1).NE.real(npes-1, kind=r8_kind)) then
+       call mpp_error(FATAL, "The r8 mpp_max function for all but the last pe did not return the appropriate answer")
+     end if
      if( pe.EQ.root )print *, 'max(pe+1) from 0 to npes-2=', a8(1)
   end if
   call mpp_set_current_pelist()
@@ -161,6 +183,9 @@ contains
   a8 = real(pe+1, kind=r8_kind)
   print *, 'pe,     pe+1 =', pe, a8(1)
   call mpp_min( a8(1) )
+  if (a8(1).NE.real(1, kind=r8_kind)) then
+    call mpp_error(FATAL, "The r8 mpp_min function for all npes did not return the appropriate answer")
+  end if
   print *, 'pe, min(pe+1)=', pe, a8(1)
   !pelist check
   call mpp_sync()
@@ -182,6 +207,9 @@ contains
      if( pe.EQ.root )print *, 'sum(pe+1) from 0 to npes-2=', a8(1)
      a8 = real(pe+1, kind=r8_kind)
      if( pe.NE.npes-1 )call mpp_min( a8(1), (/(i,i=0,npes-2)/) )
+     if (a8(1).NE.real(1, kind=r8_kind)) then
+       call mpp_error(FATAL, "The r8 mpp_min function for all but the last pe did not return the appropriate answer")
+     end if
      if( pe.EQ.root )print *, 'min(pe+1) from 0 to npes-2=', a8(1)
   end if
   call mpp_set_current_pelist()
