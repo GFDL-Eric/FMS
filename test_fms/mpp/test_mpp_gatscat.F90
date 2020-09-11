@@ -25,7 +25,6 @@
 !> @note  Some of the tested mpp_gather routines are legavy routines originally in file test_mpp.F90.
 !> @todo  Routine test_gather_2DV is a legacy routine with legacy issues. See associated comments.
 program test_mpp_gatscat
-#include <fms_platform.h>
 
 #ifdef sgi_mipspro
   use shmem_interface
@@ -37,6 +36,7 @@ program test_mpp_gatscat
   use mpp_mod, only : mpp_gather, mpp_scatter, mpp_error, FATAL
   use mpp_io_mod, only: mpp_io_init, mpp_flush
   use mpp_mod, only : mpp_init_test_requests_allocated
+  use platform_mod
 
 #ifdef use_MPI_GSM
   use mpp_mod, only : mpp_gsm_malloc, mpp_gsm_free
@@ -51,7 +51,7 @@ program test_mpp_gatscat
   pointer (locd, d)
 #else
   real, allocatable, dimension(:) :: d
-  integer(LONG_KIND) :: locd
+  integer(kind=i8_kind) :: locd
 #endif
   integer                         :: pe, npes, root, istat
   integer                         :: out_unit
@@ -123,9 +123,8 @@ contains
 
     integer :: pelist(npes)
     integer :: i,j,k
-    real(FLOAT_KIND), allocatable, dimension(:,:)  ::  data     !!Data to be scattered
-    real(FLOAT_KIND), allocatable, dimension(:,:)  ::  segment
-    real(FLOAT_KIND) :: val
+    real(kind=r4_kind), allocatable, dimension(:,:)  ::  data     !!Data to be scattered
+    real(kind=r4_kind), allocatable, dimension(:,:)  ::  segment
     integer :: DS, SS  !!Source data size and segment size
     integer :: iz, jz  !!The zeroth element to be scattered is at pos data(is+iz, js+jz)
     integer :: is, ie, js, je !!The amount of data to be scattered is (ie - is)*(je - js)
@@ -230,9 +229,8 @@ end subroutine test_scatter_2D_R4
 
     integer :: pelist(npes)
     integer :: i,j,k
-    real(DOUBLE_KIND), allocatable, dimension(:,:)  ::  data     !!Data to be scattered
-    real(DOUBLE_KIND), allocatable, dimension(:,:)  ::  segment
-    real(DOUBLE_KIND) :: val
+    real(kind=r8_kind), allocatable, dimension(:,:)  ::  data     !!Data to be scattered
+    real(kind=r8_kind), allocatable, dimension(:,:)  ::  segment
     integer :: DS, SS  !!Source data size and segment size
     integer :: iz, jz  !!The zeroth element to be scattered is at pos data(is+iz, js+jz)
     integer :: is, ie, js, je !!The amount of data to be scattered is (ie - is)*(je - js)
@@ -338,9 +336,8 @@ end subroutine test_scatter_2D_R8
 
     integer :: pelist(npes)
     integer :: i,j,k
-    real(FLOAT_KIND), allocatable, dimension(:,:,:)  ::  data     !!Data to be scattered
-    real(FLOAT_KIND), allocatable, dimension(:,:,:)  ::  segment
-    real(FLOAT_KIND) :: val
+    real(kind=r4_kind), allocatable, dimension(:,:,:)  ::  data     !!Data to be scattered
+    real(kind=r4_kind), allocatable, dimension(:,:,:)  ::  segment
     integer :: DS, SS  !!Source data size and segment size
     integer :: iz, jz  !!The zeroth element to be scattered is at pos data(is+iz, js+jz)
     integer :: is, ie, js, je !!The amount of data to be scattered is (ie - is)*(je - js)
@@ -469,9 +466,8 @@ end subroutine test_scatter_2D_R8
 
     integer :: pelist(npes)
     integer :: i,j,k
-    real(DOUBLE_KIND), allocatable, dimension(:,:,:)  ::  data     !!Data to be scattered
-    real(DOUBLE_KIND), allocatable, dimension(:,:,:)  ::  segment
-    real(DOUBLE_KIND) :: val
+    real(kind=r8_kind), allocatable, dimension(:,:,:)  ::  data     !!Data to be scattered
+    real(kind=r8_kind), allocatable, dimension(:,:,:)  ::  segment
     integer :: DS, SS  !!Source data size and segment size
     integer :: iz, jz  !!The zeroth element to be scattered is at pos data(is+iz, js+jz)
     integer :: is, ie, js, je !!The amount of data to be scattered is (ie - is)*(je - js)
@@ -616,8 +612,8 @@ end subroutine test_scatter_2D_R8
 
      integer :: pelist(npes)
      integer :: i
-     real(FLOAT_KIND) :: rdata(npes)
-     real(FLOAT_KIND) :: val
+     real(kind=r4_kind) :: rdata(npes)
+     real(kind=r4_kind) :: val
 
      if(npes < 3)then
        call mpp_error(FATAL, "Test_gather: minimum of 3 ranks required. Not testing gather; too few ranks.")
@@ -665,8 +661,8 @@ end subroutine test_scatter_2D_R8
 
      integer :: pelist(npes)
      integer :: i
-     real(DOUBLE_KIND) :: rdata(npes)
-     real(DOUBLE_KIND) :: val
+     real(kind=r8_kind) :: rdata(npes)
+     real(kind=r8_kind) :: val
 
      if(npes < 3)then
        call mpp_error(FATAL, "Test_gather: minimum of 3 ranks required. Not testing gather; too few ranks.")
