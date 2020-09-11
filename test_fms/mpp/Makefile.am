@@ -57,7 +57,8 @@ check_PROGRAMS = test_mpp \
   test_mpp_sum \
   test_update_domains_performance \
   test_minmax \
-  test_mpp_sendrecv
+  test_mpp_sendrecv \
+	test_mpp_update_domains_ad
 
 # These are the sources for the tests.
 test_mpp_SOURCES = test_mpp.F90
@@ -83,15 +84,16 @@ test_mpp_npes_SOURCES = test_mpp_npes.F90
 test_mpp_pe_SOURCES = test_mpp_pe.F90
 test_mpp_root_pe_SOURCES=test_mpp_root_pe.F90
 test_peset_SOURCES=test_peset.F90
+test_mpp_update_domains_SOURCES = test_mpp_update_domains.F90 fill_halo.F90 \
+                                  compare_data_checksums.F90
 test_mpp_gatscat_SOURCES=test_mpp_gatscat.F90
 test_mpp_sendrecv_SOURCES=test_mpp_sendrecv.F90
-test_mpp_update_domains_SOURCES = test_mpp_update_domains.F90 \
-  fill_halo.F90 compare_data_checksums.F90
 test_mpp_sum_SOURCES=test_mpp_sum.F90
 test_update_domains_performance_SOURCES=test_update_domains_performance.F90 \
                                         compare_data_checksums.F90
 test_mpp_alltoall_SOURCES = test_mpp_alltoall.F90
 test_minmax_SOURCES=test_minmax.F90
+test_mpp_update_domains_ad_SOURCES=test_mpp_update_domains_ad.F90 compare_data_checksums.F90
 
 # Run the test programs.
 TESTS = test_mpp_domains2.sh \
@@ -117,7 +119,8 @@ TESTS = test_mpp_domains2.sh \
   test_mpp_gatscat.sh \
   test_update_domains_performance.sh \
   test_minmax.sh \
-  test_mpp_sendrecv.sh
+  test_mpp_sendrecv.sh \
+	test_mpp_update_domains_ad.sh
 
 # These files will also be included in the distribution.
 EXTRA_DIST = input_base.nml \
@@ -147,13 +150,14 @@ EXTRA_DIST = input_base.nml \
   test_mpp_gatscat.sh \
   test_update_domains_performance.sh \
   test_minmax.sh \
-  test_mpp_sendrecv.sh
-
+  test_mpp_sendrecv.sh \
+  test_mpp_update_domains_ad.sh
 
 compare_data_checksums.mod : compare_data_checksums.$(OBJEXT)
 fill_halo.mod : fill_halo.$(OBJEXT)
 test_mpp_update_domains.$(OBJEXT) : fill_halo.mod compare_data_checksums.mod
 test_update_domains_performance.$(OBJEXT) : compare_data_checksums.mod
+test_mpp_update_domains_ad.$(OBJEXT) : compare_data_checksums.mod
 
 # Clean up
 CLEANFILES = input.nml input_alternative.nml input_blank.nml empty.nml *.out* *.tst* \

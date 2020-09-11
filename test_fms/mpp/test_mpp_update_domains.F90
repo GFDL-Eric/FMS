@@ -99,6 +99,8 @@ program test_mpp_update_domains
   call test_halo_update_r4( 'Folded-west symmetry' ) !includes vector field test
   call test_halo_update_r4( 'Folded-east symmetry' ) !includes vector field test
   ! pe subset test
+  !> @todo resolve issue. This test triggers an error in mpp_clock_begin called by mpp_update_domains
+  !! cannot change pelist context of a clock.
   if (mpp_npes() .GE. 16) then
     if (mpp_pe() == mpp_root_pe()) &
       print *, '--------------------> Calling test_subset_update <-------------------'
@@ -1004,7 +1006,5 @@ program test_mpp_update_domains
    call mpp_set_current_pelist()
 
   end subroutine test_subset_update_r4
-  
-  
 
 end program test_mpp_update_domains 
