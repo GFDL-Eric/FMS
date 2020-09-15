@@ -36,24 +36,22 @@
 #undef MPP_READ_2DDECOMP_4D_
 #define MPP_READ_2DDECOMP_4D_ mpp_read_2ddecomp_r4d
 #undef MPP_TYPE_
-#define MPP_TYPE_ real
-#include <mpp_read_2Ddecomp.h>
-
-#ifdef OVERLOAD_R8
-#undef READ_RECORD_CORE_
-#define READ_RECORD_CORE_ read_record_core_r8
-#undef READ_RECORD_
-#define READ_RECORD_ read_record_r8
-#undef MPP_READ_2DDECOMP_2D_
-#define MPP_READ_2DDECOMP_2D_ mpp_read_2ddecomp_r2d_r8
-#undef MPP_READ_2DDECOMP_3D_
-#define MPP_READ_2DDECOMP_3D_ mpp_read_2ddecomp_r3d_r8
-#undef MPP_READ_2DDECOMP_4D_
-#define MPP_READ_2DDECOMP_4D_ mpp_read_2ddecomp_r4d_r8
-#undef MPP_TYPE_
 #define MPP_TYPE_ real(DOUBLE_KIND)
 #include <mpp_read_2Ddecomp.h>
-#endif
+
+#undef READ_RECORD_CORE_
+#define READ_RECORD_CORE_ read_record_core_r4
+#undef READ_RECORD_
+#define READ_RECORD_ read_record_r4
+#undef MPP_READ_2DDECOMP_2D_
+#define MPP_READ_2DDECOMP_2D_ mpp_read_2ddecomp_r2d_r4
+#undef MPP_READ_2DDECOMP_3D_
+#define MPP_READ_2DDECOMP_3D_ mpp_read_2ddecomp_r3d_r4
+#undef MPP_READ_2DDECOMP_4D_
+#define MPP_READ_2DDECOMP_4D_ mpp_read_2ddecomp_r4d_r4
+#undef MPP_TYPE_
+#define MPP_TYPE_ real(FLOAT_KIND)
+#include <mpp_read_2Ddecomp.h>
 
 #undef MPP_READ_COMPRESSED_1D_
 #define MPP_READ_COMPRESSED_1D_ mpp_read_compressed_r1d
@@ -131,7 +129,7 @@
     subroutine mpp_read_region_r2D(unit, field, data, start, nread)
       integer,         intent(in) :: unit
       type(fieldtype), intent(in) :: field
-      real,         intent(inout) :: data(:,:)
+      real(FLOAT_KIND),         intent(inout) :: data(:,:)
       integer,         intent(in) :: start(:), nread(:)
 
       if(size(start(:)) .NE. 4 .OR. size(nread(:)) .NE. 4) call mpp_error(FATAL, &
@@ -142,7 +140,7 @@
       endif
       if(nread(3) .NE. 1 .OR. nread(4) .NE. 1) call mpp_error(FATAL, &
           "mpp_io_read.inc(mpp_read_region_r2D): nread(3) and nread(4) must be 1")
-      call read_record_core(unit, field, nread(1)*nread(2), data, start, nread)
+      call read_record_core_r4(unit, field, nread(1)*nread(2), data, start, nread)
 
       return
 
@@ -152,7 +150,7 @@
     subroutine mpp_read_region_r3D(unit, field, data, start, nread)
       integer,         intent(in) :: unit
       type(fieldtype), intent(in) :: field
-      real,         intent(inout) :: data(:,:,:)
+      real(FLOAT_KIND),         intent(inout) :: data(:,:,:)
       integer,         intent(in) :: start(:), nread(:)
 
       if(size(start(:)) .NE. 4 .OR. size(nread(:)) .NE. 4) call mpp_error(FATAL, &
@@ -163,12 +161,11 @@
       endif
       if(nread(4) .NE. 1) call mpp_error(FATAL, &
           "mpp_io_read.inc(mpp_read_region_r3D): nread(4) must be 1")
-      call read_record_core(unit, field, nread(1)*nread(2)*nread(3), data, start, nread)
+      call read_record_core_r4(unit, field, nread(1)*nread(2)*nread(3), data, start, nread)
 
       return
     end subroutine mpp_read_region_r3D
 
-#ifdef OVERLOAD_R8
     subroutine mpp_read_region_r2D_r8(unit, field, data, start, nread)
       integer,                intent(in) :: unit
       type(fieldtype),        intent(in) :: field
@@ -183,7 +180,7 @@
       endif
       if(nread(3) .NE. 1 .OR. nread(4) .NE. 1) call mpp_error(FATAL, &
           "mpp_io_read.inc(mpp_read_region_r2D_r8): nread(3) and nread(4) must be 1")
-      call read_record_core_r8(unit, field, nread(1)*nread(2), data, start, nread)
+      call read_record_core(unit, field, nread(1)*nread(2), data, start, nread)
 
       return
     end subroutine mpp_read_region_r2D_r8
@@ -202,11 +199,10 @@
       endif
       if(nread(4) .NE. 1) call mpp_error(FATAL, &
           "mpp_io_read.inc(mpp_read_region_r3D_r8): nread(4) must be 1")
-      call read_record_core_r8(unit, field, nread(1)*nread(2)*nread(3), data, start, nread)
+      call read_record_core(unit, field, nread(1)*nread(2)*nread(3), data, start, nread)
 
       return
     end subroutine mpp_read_region_r3D_r8
-#endif
 
 
     !--- Assume the text field is at most two-dimensional

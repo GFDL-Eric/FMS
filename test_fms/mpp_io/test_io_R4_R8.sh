@@ -1,3 +1,5 @@
+#!/bin/sh
+
 #***********************************************************************
 #*                   GNU Lesser General Public License
 #*
@@ -17,31 +19,41 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-# This is an automake file for the test_fms/mpp_io directory of the
-# FMS package.
+# This is part of the GFDL FMS package. This is a shell script to
+# execute tests in the test_fms/mpp directory.
 
-# uramirez, Ed Hartnett, Ryan Mulhall
+# Ryan Mulhall 
 
-# Find the fms_mod.mod file.
-AM_CPPFLAGS = -I${top_srcdir}/include -I${top_builddir}/mpp -I${top_builddir}/platform
+# Set common test settings.
+. ../test_common.sh
 
-# Link to the FMS library.
-LDADD = ${top_builddir}/libFMS/libFMS.la
+skip_test="no"
 
-# Build this test program.
-check_PROGRAMS = test_mpp_io \
-  test_io_R4_R8
+# Copy file for test.
+cp $top_srcdir/test_fms/mpp_io/input_base.nml input.nml
 
-# This is the source code for the test.
-test_mpp_io_SOURCES = test_mpp_io.F90
-test_io_R4_R8_SOURCES = test_io_R4_R8.F90
 
-# Run the test program.
-TESTS = test_mpp_io2.sh \
-  test_io_R4_R8.sh
+# Get the number of available CPUs on the system
+if [ $(command -v nproc) ]
+then
+   # Looks like a linux system
+   nProc=$(nproc)
+elif [ $(command -v sysctl) ]
+then
+   # Looks like a Mac OS X system
+   nProc=$(sysctl -n hw.physicalcpu)
+else
+   nProc=-1
+fi
 
-# These files will also be distributed.
-EXTRA_DIST = test_mpp_io2.sh test_io_R4_R8.sh input_base.nml
+if [ $nProc -lt 0 ]
+then
+   # Couldn't get the number of CPUs, skip the test.
+   skip_test="skip"
+elif [ $nProc -lt 12 ]
+then
+   # Need to oversubscribe the MPI
+   run_test test_io_R4_R8 12 $skip_test "true"
+fi
 
-# Clean up
-CLEANFILES = input.nml *.nc* *.out
+run_test test_io_R4_R8 12 $skip_test
