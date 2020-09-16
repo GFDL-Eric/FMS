@@ -19,7 +19,6 @@
 
 
 module drifters_input_mod
-#include <fms_platform.h>
   implicit none
   private
 
@@ -427,6 +426,3 @@ module drifters_input_mod
   end subroutine drifters_input_save
 
 end module drifters_input_mod
-
-!===============================================================================
-!===============================================================================
