@@ -19,7 +19,6 @@
 #include "fms_switches.h"
 
 module drifters_comm_mod
-#include <fms_platform.h>
 
 #ifdef _SERIAL
 

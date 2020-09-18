@@ -27,6 +27,7 @@
 
 # Include .h and .mod files.
 AM_CPPFLAGS = -I${top_srcdir}/include
+AM_CPPFLAGS += -I${top_builddir}/platform
 AM_CPPFLAGS += -I${top_builddir}/mpp
 
 # Build these uninstalled convenience libraries.

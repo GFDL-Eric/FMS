@@ -22,7 +22,6 @@
 #define _FLATTEN(A) reshape((A), (/size((A))/) )
 
 module drifters_mod
-#include <fms_platform.h>
 ! <CONTACT EMAIL="Alexander.Pletzer@noaa.gov">
 !   Alexander Pletzer
 ! </CONTACT>
