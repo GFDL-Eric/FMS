@@ -30,6 +30,7 @@ AM_CPPFLAGS += -I${top_builddir}/fms
 AM_CPPFLAGS += -I${top_builddir}/constants
 AM_CPPFLAGS += -I${top_builddir}/fms2_io
 AM_CPPFLAGS += -I${top_builddir}/coupler
+AM_CPPFLAGS += -I${top_builddir}/platform
 
 # Build this uninstalled convenience library.
 noinst_LTLIBRARIES = libdiag_integral.la
