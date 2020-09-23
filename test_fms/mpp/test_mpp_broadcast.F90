@@ -202,7 +202,8 @@ subroutine test_broadcast_4D_R4()
         do m=1, NN
            do i=1, NN
               do j=1, NN
-                 if(r(j,i,m,n) .NE. k(j,i,m,n)) call mpp_error(FATAL, "test_broadcast: on root_pe, r should equal k")
+                 if(r(j,i,m,n) .NE. k(j,i,m,n)) &
+                      call mpp_error(FATAL, "test_broadcast: on root_pe, r should equal k")
               enddo
            enddo
         enddo
@@ -212,7 +213,8 @@ subroutine test_broadcast_4D_R4()
         do m=1, NN
            do i=1, NN
               do j=1, NN
-                 if(r(j,i,m,n) == k(j,i,m,n)) call mpp_error(FATAL, "test_broadcast: on non root_pes, r should not equal k")
+                 if(r(j,i,m,n) == k(j,i,m,n)) &
+                      call mpp_error(FATAL, "test_broadcast: on non root_pes, r should not equal k")
               enddo
            enddo
         enddo
@@ -226,7 +228,8 @@ subroutine test_broadcast_4D_R4()
      do m=1, NN
         do i=1, NN
            do j=1, NN
-              if(r(j,i,m,n) .NE. k(j,i,m,n)) call mpp_error(FATAL, "test_broadcast: after broadcast, r should equal k")
+              if(r(j,i,m,n) .NE. k(j,i,m,n)) &
+                   call mpp_error(FATAL, "test_broadcast: after broadcast, r should equal k")
            enddo
         enddo
      enddo
@@ -272,7 +275,8 @@ subroutine test_broadcast_5D_R4()
            do i=1, NN
               do j=1, NN
                  do l=1, NN
-                    if(r(l,j,i,m,n) .NE. k(l,j,i,m,n)) call mpp_error(FATAL, "test_broadcast: on root_pe, r should equal k")
+                    if(r(l,j,i,m,n) .NE. k(l,j,i,m,n)) &
+                         call mpp_error(FATAL, "test_broadcast: on root_pe, r should equal k")
                  enddo
               enddo
            enddo
@@ -284,7 +288,8 @@ subroutine test_broadcast_5D_R4()
            do i=1, NN
               do j=1, NN
                  do l=1, NN
-                    if(r(l,j,i,m,n) == k(l,j,i,m,n)) call mpp_error(FATAL, "test_broadcast: on non root_pes, r should not equal k")
+                    if(r(l,j,i,m,n) == k(l,j,i,m,n)) &
+                         call mpp_error(FATAL, "test_broadcast: on non root_pes, r should not equal k")
                  enddo
               enddo
            enddo
@@ -300,7 +305,8 @@ subroutine test_broadcast_5D_R4()
         do i=1, NN
            do j=1, NN
               do l=1, NN
-                 if(r(l,j,i,m,n) .NE. k(l,j,i,m,n)) call mpp_error(FATAL, "test_broadcast: after broadcast, r should equal k")
+                 if(r(l,j,i,m,n) .NE. k(l,j,i,m,n)) &
+                      call mpp_error(FATAL, "test_broadcast: after broadcast, r should equal k")
               enddo
            enddo
         enddo
@@ -458,7 +464,8 @@ subroutine test_broadcast_4D_R8()
         do m=1, NN
            do i=1, NN
               do j=1, NN
-                 if(r(j,i,m,n) .NE. k(j,i,m,n)) call mpp_error(FATAL, "test_broadcast: on root_pe, r should equal k")
+                 if(r(j,i,m,n) .NE. k(j,i,m,n)) &
+                      call mpp_error(FATAL, "test_broadcast: on root_pe, r should equal k")
               enddo
            enddo
         enddo
@@ -468,7 +475,8 @@ subroutine test_broadcast_4D_R8()
         do m=1, NN
            do i=1, NN
               do j=1, NN
-                 if(r(j,i,m,n) == k(j,i,m,n)) call mpp_error(FATAL, "test_broadcast: on non root_pes, r should not equal k")
+                 if(r(j,i,m,n) == k(j,i,m,n)) &
+                      call mpp_error(FATAL, "test_broadcast: on non root_pes, r should not equal k")
               enddo
            enddo
         enddo
@@ -482,7 +490,8 @@ subroutine test_broadcast_4D_R8()
      do m=1, NN
         do i=1, NN
            do j=1, NN
-              if(r(j,i,m,n) .NE. k(j,i,m,n)) call mpp_error(FATAL, "test_broadcast: after broadcast, r should equal k")
+              if(r(j,i,m,n) .NE. k(j,i,m,n)) &
+                   call mpp_error(FATAL, "test_broadcast: after broadcast, r should equal k")
            enddo
         enddo
      enddo
@@ -528,7 +537,8 @@ subroutine test_broadcast_5D_R8()
            do i=1, NN
               do j=1, NN
                  do l=1, NN
-                    if(r(l,j,i,m,n) .NE. k(l,j,i,m,n)) call mpp_error(FATAL, "test_broadcast: on root_pe, r should equal k")
+                    if(r(l,j,i,m,n) .NE. k(l,j,i,m,n)) &
+                         call mpp_error(FATAL, "test_broadcast: on root_pe, r should equal k")
                  enddo
               enddo
            enddo
@@ -540,7 +550,8 @@ subroutine test_broadcast_5D_R8()
            do i=1, NN
               do j=1, NN
                  do l=1, NN
-                    if(r(l,j,i,m,n) == k(l,j,i,m,n)) call mpp_error(FATAL, "test_broadcast: on non root_pes, r should not equal k")
+                    if(r(l,j,i,m,n) == k(l,j,i,m,n)) &
+                         call mpp_error(FATAL, "test_broadcast: on non root_pes, r should not equal k")
                  enddo
               enddo
            enddo
@@ -556,7 +567,8 @@ subroutine test_broadcast_5D_R8()
         do i=1, NN
            do j=1, NN
               do l=1, NN
-                 if(r(l,j,i,m,n) .NE. k(l,j,i,m,n)) call mpp_error(FATAL, "test_broadcast: after broadcast, r should equalk")
+                 if(r(l,j,i,m,n) .NE. k(l,j,i,m,n)) &
+                      call mpp_error(FATAL, "test_broadcast: after broadcast, r should equalk")
               enddo
            enddo
         enddo
