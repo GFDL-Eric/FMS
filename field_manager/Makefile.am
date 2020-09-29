@@ -27,6 +27,7 @@ AM_CPPFLAGS = -I${top_srcdir}/include
 AM_CPPFLAGS += -I${top_builddir}/mpp
 AM_CPPFLAGS += -I${top_builddir}/fms
 AM_CPPFLAGS += -I${top_builddir}/fms2_io
+AM_CPPFLAGS += -I${top_builddir}/platform
 
 # Build these uninstalled convenience libraries.
 noinst_LTLIBRARIES = libfield_manager.la libfm_util.la

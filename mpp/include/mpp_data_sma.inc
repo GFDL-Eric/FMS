@@ -22,9 +22,9 @@
 !----------------------------------------------------------------!
 ! The following data is used in mpp_mod and its components       !
 !----------------------------------------------------------------!
-real(DOUBLE_KIND)                       :: mpp_stack(1)
+real(r8_kind)                       :: mpp_stack(1)
 integer                                 :: mpp_from_pe
-integer(LONG_KIND), dimension(0:MAXPES) :: status, remote_data_loc
+integer(i8_kind), dimension(0:MAXPES) :: status, remote_data_loc
 integer :: sync(SHMEM_REDUCE_SYNC_SIZE+SHMEM_BCAST_SYNC_SIZE+SHMEM_BARRIER_SYNC_SIZE)
 
 
@@ -44,7 +44,7 @@ integer, parameter :: stat = -999
 !-------------------------------------------------------------------!
 ! The following data is used in mpp_domains_mod and its components  !
 !-------------------------------------------------------------------!
-real(DOUBLE_KIND) :: mpp_domains_stack(1)
-real(DOUBLE_KIND) :: mpp_domains_stack_nonblock(1)
+real(r8_kind) :: mpp_domains_stack(1)
+real(r8_kind) :: mpp_domains_stack_nonblock(1)
 pointer( ptr_domains_stack, mpp_domains_stack )
 pointer( ptr_domains_stack_nonblock, mpp_domains_stack_nonblock )

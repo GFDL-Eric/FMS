@@ -27,11 +27,12 @@
 #endif
 
 module mpp_pset_mod
-#include <fms_platform.h>
+
   use mpp_mod, only: mpp_pe, mpp_npes, mpp_root_pe, mpp_send, mpp_recv, &
        mpp_sync, mpp_error, FATAL, WARNING, stdout, stderr, mpp_chksum, &
        mpp_declare_pelist, mpp_get_current_pelist, mpp_set_current_pelist, &
        mpp_init, COMM_TAG_1, COMM_TAG_2, COMM_TAG_3, mpp_sync_self
+  use platform_mod
   implicit none
   private
 
@@ -82,7 +83,7 @@ module mpp_pset_mod
      integer, allocatable :: pelist(:) !base PElist
      integer, allocatable :: root_pelist(:) !a PElist of all the roots
      integer, allocatable :: pset(:) !PSET IDs
-     integer(POINTER_KIND) :: p_stack
+     integer(ptr_kind) :: p_stack
      integer :: lstack, maxstack, hiWM !current stack length, max, hiWM
      integer :: commID
      character(len=32) :: name
@@ -251,7 +252,7 @@ contains
   end subroutine mpp_pset_delete
 
   subroutine mpp_send_ptr_scalar( ptr, pe )
-    integer(POINTER_KIND), intent(in) :: ptr
+    integer(ptr_kind), intent(in) :: ptr
     integer, intent(in) :: pe
 
 !currently only wraps mpp_send
@@ -260,7 +261,7 @@ contains
   end subroutine mpp_send_ptr_scalar
 
   subroutine mpp_send_ptr_array( ptr, pe )
-    integer(POINTER_KIND), intent(in) :: ptr(:)
+    integer(ptr_kind), intent(in) :: ptr(:)
     integer, intent(in) :: pe
 
 !currently only wraps mpp_send
@@ -269,7 +270,7 @@ contains
   end subroutine mpp_send_ptr_array
 
   subroutine mpp_recv_ptr_scalar( ptr, pe )
-    integer(POINTER_KIND), intent(inout) :: ptr
+    integer(ptr_kind), intent(inout) :: ptr
     integer, intent(in) :: pe
 
     call mpp_recv( ptr, pe, tag=COMM_TAG_1  )
@@ -278,7 +279,7 @@ contains
   end subroutine mpp_recv_ptr_scalar
 
   subroutine mpp_recv_ptr_array( ptr, pe )
-    integer(POINTER_KIND), intent(inout) :: ptr(:)
+    integer(ptr_kind), intent(inout) :: ptr(:)
     integer, intent(in) :: pe
     integer :: i
 
@@ -291,7 +292,7 @@ contains
 
   subroutine mpp_translate_remote_ptr( ptr, pe )
 !modifies the received pointer to correct numerical address
-    integer(POINTER_KIND), intent(inout) :: ptr
+    integer(ptr_kind), intent(inout) :: ptr
     integer, intent(in) :: pe
 #ifdef use_SGI_GSM
 !from the MPI_SGI_GLOBALPTR manpage
@@ -308,7 +309,7 @@ contains
 !    length is within the valid memory-mapped region. We do not have access to
 !    the actual array length, so we are only going to set it to 1. This might
 !    unexpectedly fail on some large model.
-    integer(POINTER_KIND) :: length=1
+    integer(ptr_kind) :: length=1
 #ifdef sgi_mipspro
     return !no translation needed on sgi_mipspro if SMA_GLOBAL_ALLOC is set
 #endif
@@ -368,7 +369,7 @@ contains
 !root allocates memory and passes pointer in
 !on return all other PSETs will have the pointer to a shared object
     type(mpp_pset_type), intent(in) :: pset
-    integer(POINTER_KIND), intent(inout) :: ptr
+    integer(ptr_kind), intent(inout) :: ptr
     integer :: i
 
     if( .NOT.pset%initialized )call mpp_error( FATAL, &
@@ -389,7 +390,7 @@ contains
 !root allocates memory and passes pointer in
 !on return all other PSETs will have the pointer to a shared object
     type(mpp_pset_type), intent(in) :: pset
-    integer(POINTER_KIND), intent(inout) :: ptr(:)
+    integer(ptr_kind), intent(inout) :: ptr(:)
     integer :: i
 
     if( .NOT.pset%initialized )call mpp_error( FATAL, &
@@ -413,10 +414,10 @@ contains
     real :: dummy
     pointer( ptr, dummy )
 #else
-    integer(POINTER_KIND), intent(in) :: ptr
+    integer(ptr_kind), intent(in) :: ptr
 #endif
 #ifdef PSET_DEBUG
-    integer(POINTER_KIND) :: p
+    integer(ptr_kind) :: p
     integer :: i
     if( .NOT.pset%initialized )call mpp_error( FATAL, &
          'MPP_PSET_CHECK_PTR: called with uninitialized PSET.' )
@@ -493,7 +494,7 @@ contains
     pset%lstack = pset%lstack + len
     pset%hiWM = max( pset%hiWM, pset%lstack )
 #else
-    integer(POINTER_KIND), intent(out) :: ptr
+    integer(ptr_kind), intent(out) :: ptr
     call mpp_error( FATAL, &
          'MPP_PSET_STACK_PUSH only works with Cray pointers.' )
 #endif
@@ -526,7 +527,7 @@ contains
 
 #ifdef PSET_DEBUG
     logical :: do_print
-    integer(LONG_KIND) :: chksum
+    integer(i8_kind) :: chksum
 
     if( .NOT.pset%initialized )call mpp_error( FATAL, &
          'MPP_PSET_PRINT_CHKSUM: called with uninitialized PSET.' )

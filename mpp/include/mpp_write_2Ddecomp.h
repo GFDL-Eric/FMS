@@ -40,14 +40,14 @@
       type(domain2D),    intent(in), optional :: domain
       integer,           intent(in), optional :: tile_count
       integer, dimension(size(field%axes(:))) :: start, axsiz
-      real(DOUBLE_KIND) :: time
+      real(r8_kind) :: time
       integer :: time_level
       logical :: newtime
       integer :: subdomain(4)
       integer :: packed_data(nwords)
       integer :: i, is, ie, js, je
 
-      real(FLOAT_KIND) :: data_r4(nwords)
+      real(r4_kind) :: data_r4(nwords)
       pointer( ptr1, data_r4)
       pointer( ptr2, packed_data)
 
@@ -129,9 +129,9 @@
 #ifdef use_netCDF
 !write time information if new time
           if( newtime )then
-              if( KIND(time).EQ.DOUBLE_KIND )then
+              if( KIND(time).EQ.r8_kind )then
                   error = NF_PUT_VAR1_DOUBLE( mpp_file(unit)%ncid, mpp_file(unit)%id, mpp_file(unit)%time_level, time )
-              else if( KIND(time).EQ.FLOAT_KIND )then
+              else if( KIND(time).EQ.r4_kind )then
                   error = NF_PUT_VAR1_REAL  ( mpp_file(unit)%ncid, mpp_file(unit)%id, mpp_file(unit)%time_level, time )
               end if
           end if
@@ -139,9 +139,9 @@
               packed_data = CEILING(data)
               error = NF_PUT_VARA_INT   ( mpp_file(unit)%ncid, field%id, start, axsiz, packed_data )
           elseif( field%pack.GT.0 .and. field%pack.LE.2 )then
-              if( KIND(data).EQ.DOUBLE_KIND )then
+              if( KIND(data).EQ.r8_kind )then
                   error = NF_PUT_VARA_DOUBLE( mpp_file(unit)%ncid, field%id, start, axsiz, data )
-              else if( KIND(data).EQ.FLOAT_KIND )then
+              else if( KIND(data).EQ.r4_kind )then
                   error = NF_PUT_VARA_REAL  ( mpp_file(unit)%ncid, field%id, start, axsiz, data )
               end if
           else              !convert to integer using scale and add: no error check on packed data representation

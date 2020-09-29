@@ -1546,7 +1546,6 @@ end subroutine get_grid_version_2
 ! A field can be overriden globally (by default) or users can specify one or two regions in which
 ! data_override will take place, field values outside the region will not be affected.
 !</OVERVIEW>
-#include <fms_platform.h>
 use platform_mod, only: r8_kind
 use constants_mod, only: PI
 use mpp_io_mod, only: axistype,mpp_close,mpp_open,mpp_get_axis_data,MPP_RDONLY,MPP_ASCII

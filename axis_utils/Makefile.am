@@ -28,6 +28,7 @@ AM_CPPFLAGS += -I${top_builddir}/mpp
 AM_CPPFLAGS += -I${top_builddir}/fms
 AM_CPPFLAGS += -I${top_builddir}/constants
 AM_CPPFLAGS += -I${top_builddir}/fms2_io
+AM_CPPFLAGS += -I${top_builddir}/platform
 
 # Build this uninstalled convenience library.
 noinst_LTLIBRARIES = libaxis_utils.la libaxis_utils2.la

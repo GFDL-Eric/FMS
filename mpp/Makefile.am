@@ -44,8 +44,9 @@ include/mpp_sum_ad.inc include/mpp_unstruct_domain.inc			\
 include/mpp_util_nocomm.inc
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I${top_srcdir}/include
-AM_CPPFLAGS += -I${top_srcdir}/mpp/include
+AM_CPPFLAGS = -I${top_srcdir}/include \
+  -I${top_srcdir}/mpp/include \
+  -I${top_builddir}/platform
 
 # Build these uninstalled convenience libraries.
 noinst_LTLIBRARIES = libmpp_parameter.la libmpp_data.la libmpp.la \
@@ -83,9 +84,9 @@ mpp.lo: mpp_parameter_mod.mod mpp_data_mod.mod $(INCFILES)
 mpp_utilities.lo: mpp_mod.mod mpp_efp_mod.mod $(INCFILES)
 mpp_memutils.lo: mpp_mod.mod $(INCFILES)
 mpp_pset.lo: mpp_mod.mod $(INCFILES)
-mpp_efp.lo: mpp_parameter_mod.mod mpp_mod.mod $(INCFILES)
-mpp_domains.lo: mpp_data_mod.mod mpp_parameter_mod.mod mpp_mod.mod	\
-mpp_memutils_mod.mod mpp_pset_mod.mod mpp_efp_mod.mod $(INCFILES)
+mpp_efp.lo: mpp_parameter_mod.mod mpp_mod.mod  $(INCFILES)
+mpp_domains.lo: mpp_data_mod.mod mpp_parameter_mod.mod mpp_mod.mod \
+mpp_memutils_mod.mod mpp_pset_mod.mod mpp_efp_mod.mod  $(INCFILES)
 mpp_io.lo: mpp_parameter_mod.mod mpp_mod.mod mpp_domains_mod.mod $(INCFILES)
 
 # Mod files are built and then installed as headers.

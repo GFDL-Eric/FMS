@@ -21,7 +21,6 @@
 #endif
 
 program test   !test various aspects of mpp_mod
-#include <fms_platform.h>
 
 #ifdef sgi_mipspro
   use shmem_interface
@@ -36,6 +35,7 @@ program test   !test various aspects of mpp_mod
 #ifdef use_MPI_GSM
   use mpp_mod, only : mpp_gsm_malloc, mpp_gsm_free
 #endif
+  use platform_mod
 
   implicit none
 
@@ -46,7 +46,7 @@ program test   !test various aspects of mpp_mod
   pointer (locd, d)
 #else
   real, allocatable, dimension(:) :: d
-  integer(LONG_KIND) :: locd
+  integer(i8_kind) :: locd
 #endif
   integer                         :: tick, tick0, ticks_per_sec, id
   integer                         :: pe, npes, root, i, j, k, l, m, n2, istat
@@ -202,7 +202,7 @@ contains
   end subroutine test_mpp_chksum
 
   subroutine test_shared_pointers(locd,n)
-    integer(LONG_KIND), intent(in) :: locd
+    integer(i8_kind), intent(in) :: locd
     integer :: n
     real :: dd(n)
     pointer( p, dd )

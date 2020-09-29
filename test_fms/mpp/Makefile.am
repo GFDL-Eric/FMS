@@ -58,6 +58,7 @@ check_PROGRAMS = test_mpp \
   test_update_domains_performance \
   test_minmax \
   test_mpp_sendrecv \
+  test_chksum_int   \
 	test_mpp_update_domains_ad
 
 # These are the sources for the tests.
@@ -94,6 +95,8 @@ test_update_domains_performance_SOURCES=test_update_domains_performance.F90 \
 test_mpp_alltoall_SOURCES = test_mpp_alltoall.F90
 test_minmax_SOURCES=test_minmax.F90
 test_mpp_update_domains_ad_SOURCES=test_mpp_update_domains_ad.F90 compare_data_checksums.F90
+test_chksum_int_SOURCES=test_chksum_int.F90
+
 
 # Run the test programs.
 TESTS = test_mpp_domains2.sh \
@@ -120,6 +123,7 @@ TESTS = test_mpp_domains2.sh \
   test_update_domains_performance.sh \
   test_minmax.sh \
   test_mpp_sendrecv.sh \
+  test_chksum_int.sh  \
 	test_mpp_update_domains_ad.sh
 
 # These files will also be included in the distribution.
@@ -151,6 +155,7 @@ EXTRA_DIST = input_base.nml \
   test_update_domains_performance.sh \
   test_minmax.sh \
   test_mpp_sendrecv.sh \
+  test_chksum_int.sh   \
   test_mpp_update_domains_ad.sh
 
 compare_data_checksums.mod : compare_data_checksums.$(OBJEXT)

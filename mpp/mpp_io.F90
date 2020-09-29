@@ -172,7 +172,7 @@
 !      integer :: type, len
 !      character(len=128) :: name
 !      character(len=256)  :: catt
-!      real(FLOAT_KIND), pointer :: fatt(:)
+!      real(r4_kind), pointer :: fatt(:)
 !   end type atttype
 !   </PRE>
 !
@@ -313,7 +313,6 @@
 
 module mpp_io_mod
 
-#include <fms_platform.h>
 #define _MAX_FILE_UNITS 1024
 
 use mpp_parameter_mod,  only : MPP_WRONLY, MPP_RDONLY, MPP_APPEND, MPP_OVERWR, MPP_ASCII
@@ -349,6 +348,7 @@ use mpp_domains_mod, only: domainUG, &
                            mpp_get_io_domain_UG_layout, &
                            mpp_get_UG_compute_domain, &
                            mpp_get_UG_domain_pelist
+use platform_mod
 !----------
 
 implicit none
@@ -442,7 +442,7 @@ type :: atttype
      character(len=256)      :: standard_name   ! CF standard name
      real                    :: min, max, missing, fill, scale, add
      integer                 :: pack
-     integer(LONG_KIND), dimension(3) :: checksum
+     integer(i8_kind), dimension(3) :: checksum
      type(axistype), pointer :: axes(:) =>NULL() !axes associated with field size, time_axis_index redundantly
                                         !hold info already contained in axes. it's clunky and inelegant,
                                         !but required so that axes can be shared among multiple files
@@ -459,14 +459,14 @@ type :: atttype
      integer            :: action, format, access, threading, fileset, record, ncid
      logical            :: opened, initialized, nohdrs
      integer            :: time_level
-     real(DOUBLE_KIND)  :: time
+     real(r8_kind)  :: time
      logical            :: valid
      logical            :: write_on_this_pe   ! indicate if will write out from this pe
      logical            :: read_on_this_pe    ! indicate if will read from this pe
      logical            :: io_domain_exist    ! indicate if io_domain exist or not.
      integer            :: id       !variable ID of time axis associated with file (only one time axis per file)
      integer            :: recdimid !dim ID of time axis associated with file (only one time axis per file)
-     real(DOUBLE_KIND), pointer :: time_values(:) =>NULL() ! time axis values are stored here instead of axis%data
+     real(r8_kind), pointer :: time_values(:) =>NULL() ! time axis values are stored here instead of axis%data
                                                   ! since mpp_write assumes these values are not time values.
                                                   ! Not used in mpp_write
      ! additional elements of filetype for mpp_read (ignored for mpp_write)
@@ -1049,7 +1049,7 @@ type :: atttype
   namelist /mpp_io_nml/header_buffer_val, global_field_on_root_pe, io_clocks_on, &
                        shuffle, deflate_level, cf_compliance
 
-  real(DOUBLE_KIND), allocatable :: mpp_io_stack(:)
+  real(r8_kind), allocatable :: mpp_io_stack(:)
   type(axistype),save            :: default_axis      !provided to users with default components
   type(fieldtype),save           :: default_field     !provided to users with default components
   type(atttype),save             :: default_att       !provided to users with default components

@@ -299,10 +299,10 @@ subroutine mpp_malloc( ptr, newlen, len )
   integer, intent(inout) :: len
   real                   :: dummy
   integer                :: words_per_long, outunit
-  integer(LONG_KIND)     :: long
+  integer(i8_kind)     :: long
   !argument ptr is a cray pointer, points to a dummy argument in this routine
   pointer( ptr, dummy )
-  !      integer(LONG_KIND) :: error_8
+  !      integer(i8_kind) :: error_8
 
   if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_MALLOC: You must first call mpp_init.' )
   !use existing allocation if it is enough
@@ -457,7 +457,7 @@ end subroutine mpp_malloc
 #undef MPP_BROADCAST_5D_
 #define MPP_BROADCAST_5D_ mpp_broadcast_real8_5d
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(DOUBLE_KIND)
+#define MPP_TYPE_ real(r8_kind)
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 8
 #undef SHMEM_BROADCAST_
@@ -516,7 +516,7 @@ end subroutine mpp_malloc
 #undef MPP_BROADCAST_5D_
 #define MPP_BROADCAST_5D_ mpp_broadcast_cmplx8_5d
 #undef MPP_TYPE_
-#define MPP_TYPE_ complex(DOUBLE_KIND)
+#define MPP_TYPE_ complex(c8_kind)
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 16
 #undef SHMEM_BROADCAST_
@@ -575,7 +575,7 @@ end subroutine mpp_malloc
 #undef MPP_BROADCAST_5D_
 #define MPP_BROADCAST_5D_ mpp_broadcast_real4_5d
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(FLOAT_KIND)
+#define MPP_TYPE_ real(r4_kind)
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 4
 #undef SHMEM_BROADCAST_
@@ -634,7 +634,7 @@ end subroutine mpp_malloc
 #undef MPP_BROADCAST_5D_
 #define MPP_BROADCAST_5D_ mpp_broadcast_cmplx4_5d
 #undef MPP_TYPE_
-#define MPP_TYPE_ complex(FLOAT_KIND)
+#define MPP_TYPE_ complex(c4_kind)
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 8
 #undef SHMEM_BROADCAST_
@@ -644,7 +644,6 @@ end subroutine mpp_malloc
 #include <mpp_transmit_sma.h>
 #endif
 
-#ifndef no_8byte_integers
 #undef MPP_TRANSMIT_
 #define MPP_TRANSMIT_ mpp_transmit_int8
 #undef MPP_TRANSMIT_SCALAR_
@@ -694,7 +693,7 @@ end subroutine mpp_malloc
 #undef MPP_BROADCAST_5D_
 #define MPP_BROADCAST_5D_ mpp_broadcast_int8_5d
 #undef MPP_TYPE_
-#define MPP_TYPE_ integer(LONG_KIND)
+#define MPP_TYPE_ integer(i8_kind)
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 8
 #undef SHMEM_BROADCAST_
@@ -702,7 +701,6 @@ end subroutine mpp_malloc
 #undef SHMEM_GET_
 #define SHMEM_GET_ SHMEM_GET8
 #include <mpp_transmit_sma.h>
-#endif
 
 #undef MPP_TRANSMIT_
 #define MPP_TRANSMIT_ mpp_transmit_int4
@@ -753,7 +751,7 @@ end subroutine mpp_malloc
 #undef MPP_BROADCAST_5D_
 #define MPP_BROADCAST_5D_ mpp_broadcast_int4_5d
 #undef MPP_TYPE_
-#define MPP_TYPE_ integer(INT_KIND)
+#define MPP_TYPE_ integer(i4_kind)
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 4
 #undef SHMEM_BROADCAST_
@@ -762,7 +760,6 @@ end subroutine mpp_malloc
 #define SHMEM_GET_ SHMEM_GET4
 #include <mpp_transmit_sma.h>
 
-#ifndef no_8byte_integers
 #undef MPP_TRANSMIT_
 #define MPP_TRANSMIT_ mpp_transmit_logical8
 #undef MPP_TRANSMIT_SCALAR_
@@ -812,7 +809,7 @@ end subroutine mpp_malloc
 #undef MPP_BROADCAST_5D_
 #define MPP_BROADCAST_5D_ mpp_broadcast_logical8_5d
 #undef MPP_TYPE_
-#define MPP_TYPE_ logical(LONG_KIND)
+#define MPP_TYPE_ logical(l8_kind)
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 8
 #undef SHMEM_BROADCAST_
@@ -820,7 +817,6 @@ end subroutine mpp_malloc
 #undef SHMEM_GET_
 #define SHMEM_GET_ SHMEM_GET8
 #include <mpp_transmit_sma.h>
-#endif
 
 #undef MPP_TRANSMIT_
 #define MPP_TRANSMIT_ mpp_transmit_logical4
@@ -871,7 +867,7 @@ end subroutine mpp_malloc
 #undef MPP_BROADCAST_5D_
 #define MPP_BROADCAST_5D_ mpp_broadcast_logical4_5d
 #undef MPP_TYPE_
-#define MPP_TYPE_ logical(INT_KIND)
+#define MPP_TYPE_ logical(l4_kind)
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 4
 #undef SHMEM_BROADCAST_
@@ -891,7 +887,7 @@ end subroutine mpp_malloc
 #undef MPP_REDUCE_1D_
 #define MPP_REDUCE_1D_ mpp_max_real8_1d
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(DOUBLE_KIND)
+#define MPP_TYPE_ real(r8_kind)
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 8
 #undef SHMEM_REDUCE_
@@ -903,33 +899,31 @@ end subroutine mpp_malloc
 #undef MPP_REDUCE_1D_
 #define MPP_REDUCE_1D_ mpp_max_real4_1d
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(FLOAT_KIND)
+#define MPP_TYPE_ real(r4_kind)
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 4
 #undef SHMEM_REDUCE_
 #define SHMEM_REDUCE_ SHMEM_REAL4_MAX_TO_ALL
 #include <mpp_reduce_sma.h>
 
-#ifndef no_8byte_integers
 #undef MPP_REDUCE_0D_
 #define MPP_REDUCE_0D_ mpp_max_int8_0d
 #undef MPP_REDUCE_1D_
 #define MPP_REDUCE_1D_ mpp_max_int8_1d
 #undef MPP_TYPE_
-#define MPP_TYPE_ integer(LONG_KIND)
+#define MPP_TYPE_ integer(i8_kind)
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 8
 #undef SHMEM_REDUCE_
 #define SHMEM_REDUCE_ SHMEM_INT8_MAX_TO_ALL
 #include <mpp_reduce_sma.h>
-#endif
 
 #undef MPP_REDUCE_0D_
 #define MPP_REDUCE_0D_ mpp_max_int4_0d
 #undef MPP_REDUCE_1D_
 #define MPP_REDUCE_1D_ mpp_max_int4_1d
 #undef MPP_TYPE_
-#define MPP_TYPE_ integer(INT_KIND)
+#define MPP_TYPE_ integer(i4_kind)
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 4
 #undef SHMEM_REDUCE_
@@ -941,7 +935,7 @@ end subroutine mpp_malloc
 #undef MPP_REDUCE_1D_
 #define MPP_REDUCE_1D_ mpp_min_real8_1d
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(DOUBLE_KIND)
+#define MPP_TYPE_ real(r8_kind)
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 8
 #undef SHMEM_REDUCE_
@@ -953,33 +947,31 @@ end subroutine mpp_malloc
 #undef MPP_REDUCE_1D_
 #define MPP_REDUCE_1D_ mpp_min_real4_1d
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(FLOAT_KIND)
+#define MPP_TYPE_ real(r4_kind)
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 4
 #undef SHMEM_REDUCE_
 #define SHMEM_REDUCE_ SHMEM_REAL4_MIN_TO_ALL
 #include <mpp_reduce_sma.h>
 
-#ifndef no_8byte_integers
 #undef MPP_REDUCE_0D_
 #define MPP_REDUCE_0D_ mpp_min_int8_0d
 #undef MPP_REDUCE_1D_
 #define MPP_REDUCE_1D_ mpp_min_int8_1d
 #undef MPP_TYPE_
-#define MPP_TYPE_ integer(LONG_KIND)
+#define MPP_TYPE_ integer(i8_kind)
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 8
 #undef SHMEM_REDUCE_
 #define SHMEM_REDUCE_ SHMEM_INT8_MIN_TO_ALL
 #include <mpp_reduce_sma.h>
-#endif
 
 #undef MPP_REDUCE_0D_
 #define MPP_REDUCE_0D_ mpp_min_int4_0d
 #undef MPP_REDUCE_1D_
 #define MPP_REDUCE_1D_ mpp_min_int4_1d
 #undef MPP_TYPE_
-#define MPP_TYPE_ integer(INT_KIND)
+#define MPP_TYPE_ integer(i4_kind)
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 4
 #undef SHMEM_REDUCE_
@@ -999,7 +991,7 @@ end subroutine mpp_malloc
 #undef MPP_SUM_5D_
 #define MPP_SUM_5D_ mpp_sum_real8_5d
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(DOUBLE_KIND)
+#define MPP_TYPE_ real(r8_kind)
 #undef SHMEM_SUM_
 #define SHMEM_SUM_ SHMEM_REAL8_SUM_TO_ALL
 #undef MPP_TYPE_BYTELEN_
@@ -1020,7 +1012,7 @@ end subroutine mpp_malloc
 #undef MPP_SUM_5D_
 #define MPP_SUM_5D_ mpp_sum_cmplx8_5d
 #undef MPP_TYPE_
-#define MPP_TYPE_ complex(DOUBLE_KIND)
+#define MPP_TYPE_ complex(c8_kind)
 #undef SHMEM_SUM_
 #define SHMEM_SUM_ SHMEM_COMP8_SUM_TO_ALL
 #undef MPP_TYPE_BYTELEN_
@@ -1041,7 +1033,7 @@ end subroutine mpp_malloc
 #undef MPP_SUM_5D_
 #define MPP_SUM_5D_ mpp_sum_real4_5d
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(FLOAT_KIND)
+#define MPP_TYPE_ real(r4_kind)
 #undef SHMEM_SUM_
 #define SHMEM_SUM_ SHMEM_REAL4_SUM_TO_ALL
 #undef MPP_TYPE_BYTELEN_
@@ -1062,7 +1054,7 @@ end subroutine mpp_malloc
 #undef MPP_SUM_5D_
 #define MPP_SUM_5D_ mpp_sum_cmplx4_5d
 #undef MPP_TYPE_
-#define MPP_TYPE_ complex(FLOAT_KIND)
+#define MPP_TYPE_ complex(c4_kind)
 #undef SHMEM_SUM_
 #define SHMEM_SUM_ SHMEM_COMP4_SUM_TO_ALL
 #undef MPP_TYPE_BYTELEN_
@@ -1070,7 +1062,6 @@ end subroutine mpp_malloc
 #include <mpp_sum_sma.h>
 #endif
 
-#ifndef no_8byte_integers
 #undef MPP_SUM_
 #define MPP_SUM_ mpp_sum_int8
 #undef MPP_SUM_SCALAR_
@@ -1084,13 +1075,12 @@ end subroutine mpp_malloc
 #undef MPP_SUM_5D_
 #define MPP_SUM_5D_ mpp_sum_int8_5d
 #undef MPP_TYPE_
-#define MPP_TYPE_ integer(LONG_KIND)
+#define MPP_TYPE_ integer(i8_kind)
 #undef SHMEM_SUM_
 #define SHMEM_SUM_ SHMEM_INT8_SUM_TO_ALL
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 8
 #include <mpp_sum_sma.h>
-#endif
 
 #undef MPP_SUM_
 #define MPP_SUM_ mpp_sum_int4
@@ -1105,7 +1095,7 @@ end subroutine mpp_malloc
 #undef MPP_SUM_5D_
 #define MPP_SUM_5D_ mpp_sum_int4_5d
 #undef MPP_TYPE_
-#define MPP_TYPE_ integer(INT_KIND)
+#define MPP_TYPE_ integer(i4_kind)
 #undef SHMEM_SUM_
 #define SHMEM_SUM_ SHMEM_INT4_SUM_TO_ALL
 #undef MPP_TYPE_BYTELEN_
@@ -1125,7 +1115,7 @@ end subroutine mpp_malloc
 #undef MPI_TYPE_
 #define MPP_ALLTOALL_ mpp_alltoall_int4
 #define MPP_ALLTOALLV_ mpp_alltoall_int4_v
-#define MPP_TYPE_ integer(INT_KIND)
+#define MPP_TYPE_ integer(i4_kind)
 #define MPP_TYPE_BYTELEN_ 4
 #define MPI_TYPE_ MPI_INTEGER4
 #include <mpp_alltoall_sma.h>
@@ -1137,7 +1127,7 @@ end subroutine mpp_malloc
 #undef MPI_TYPE_
 #define MPP_ALLTOALL_ mpp_alltoall_int8
 #define MPP_ALLTOALLV_ mpp_alltoall_int8_v
-#define MPP_TYPE_ integer(LONG_KIND)
+#define MPP_TYPE_ integer(i8_kind)
 #define MPP_TYPE_BYTELEN_ 8
 #define MPI_TYPE_ MPI_INTEGER8
 #include <mpp_alltoall_sma.h>
@@ -1149,7 +1139,7 @@ end subroutine mpp_malloc
 #undef MPI_TYPE_
 #define MPP_ALLTOALL_ mpp_alltoall_real4
 #define MPP_ALLTOALLV_ mpp_alltoall_real4_v
-#define MPP_TYPE_ real(FLOAT_KIND)
+#define MPP_TYPE_ real(r4_kind)
 #define MPP_TYPE_BYTELEN_ 4
 #define MPI_TYPE_ MPI_REAL4
 #include <mpp_alltoall_sma.h>
@@ -1161,7 +1151,7 @@ end subroutine mpp_malloc
 #undef MPI_TYPE_
 #define MPP_ALLTOALL_ mpp_alltoall_real8
 #define MPP_ALLTOALLV_ mpp_alltoall_real8_v
-#define MPP_TYPE_ real(DOUBLE_KIND)
+#define MPP_TYPE_ real(r8_kind)
 #define MPP_TYPE_BYTELEN_ 8
 #define MPI_TYPE_ MPI_REAL8
 #include <mpp_alltoall_sma.h>
@@ -1173,32 +1163,32 @@ end subroutine mpp_malloc
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #define MPP_TYPE_CREATE_ mpp_type_create_int4
-#define MPP_TYPE_ integer(INT_KIND)
+#define MPP_TYPE_ integer(i4_kind)
 #define MPI_TYPE_ MPI_INTEGER4
 #include <mpp_type_sma.h>
 
 #define MPP_TYPE_CREATE_ mpp_type_create_int8
-#define MPP_TYPE_ integer(LONG_KIND)
+#define MPP_TYPE_ integer(i8_kind)
 #define MPI_TYPE_ MPI_INTEGER8
 #include <mpp_type_sma.h>
 
 #define MPP_TYPE_CREATE_ mpp_type_create_real4
-#define MPP_TYPE_ real(FLOAT_KIND)
+#define MPP_TYPE_ real(r4_kind)
 #define MPI_TYPE_ MPI_REAL4
 #include <mpp_type_sma.h>
 
 #define MPP_TYPE_CREATE_ mpp_type_create_real8
-#define MPP_TYPE_ real(DOUBLE_KIND)
+#define MPP_TYPE_ real(r8_kind)
 #define MPI_TYPE_ MPI_REAL8
 #include <mpp_type_sma.h>
 
 #define MPP_TYPE_CREATE_ mpp_type_create_logical4
-#define MPP_TYPE_ logical(INT_KIND)
+#define MPP_TYPE_ logical(l4_kind)
 #define MPI_TYPE_ MPI_INTEGER4
 #include <mpp_type_sma.h>
 
 #define MPP_TYPE_CREATE_ mpp_type_create_logical8
-#define MPP_TYPE_ logical(LONG_KIND)
+#define MPP_TYPE_ logical(l8_kind)
 #define MPI_TYPE_ MPI_INTEGER8
 #include <mpp_type_sma.h>
 
@@ -1221,8 +1211,8 @@ subroutine shmem_int4_wait_local( ivar, cmp_value )
 #else
   !dir$ INLINEALWAYS shmem_int4_wait_local
 #endif
-  integer(INT_KIND), intent(in) :: cmp_value
-  integer(INT_KIND), intent(inout) :: ivar
+  integer(i4_kind), intent(in) :: cmp_value
+  integer(i4_kind), intent(inout) :: ivar
   call SHMEM_INT4_WAIT( ivar, cmp_value )
   return
 end subroutine shmem_int4_wait_local
@@ -1233,8 +1223,8 @@ subroutine shmem_int8_wait_local( ivar, cmp_value )
 #else
   !dir$ INLINEALWAYS shmem_int4_wait_local
 #endif
-  integer(LONG_KIND), intent(in) :: cmp_value
-  integer(LONG_KIND), intent(inout) :: ivar
+  integer(i8_kind), intent(in) :: cmp_value
+  integer(i8_kind), intent(inout) :: ivar
   call SHMEM_INT8_WAIT( ivar, cmp_value )
   return
 end subroutine shmem_int8_wait_local

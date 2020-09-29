@@ -54,7 +54,7 @@
       integer                       :: unit_begin, unit_end, unit_nml, io_status, unit
       logical                       :: opened
 #ifdef use_libSMA
-      integer(POINTER_KIND) :: ptr_info_var(16)
+      integer(ptr_kind) :: ptr_info_var(16)
       pointer( ptr_info, ptr_info_var )
 #endif
 
@@ -979,7 +979,7 @@ end subroutine init_nonblock_type
 #undef VECTOR_FIELD_
 #define VECTOR_FIELD_
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(DOUBLE_KIND)
+#define MPP_TYPE_ real(r8_kind)
 #undef MPP_UPDATE_DOMAINS_2D_
 #define MPP_UPDATE_DOMAINS_2D_ mpp_update_domain2D_r8_2D
 #undef MPP_UPDATE_DOMAINS_3D_
@@ -1011,7 +1011,7 @@ end subroutine init_nonblock_type
 
 #ifdef OVERLOAD_C8
 #undef MPP_TYPE_
-#define MPP_TYPE_ complex(DOUBLE_KIND)
+#define MPP_TYPE_ complex(c8_kind)
 #undef MPP_UPDATE_DOMAINS_2D_
 #define MPP_UPDATE_DOMAINS_2D_ mpp_update_domain2D_c8_2D
 #undef MPP_UPDATE_DOMAINS_3D_
@@ -1031,9 +1031,8 @@ end subroutine init_nonblock_type
 #include <mpp_update_domains2D.h>
 #endif
 
-#ifndef no_8byte_integers
 #undef MPP_TYPE_
-#define MPP_TYPE_ integer(LONG_KIND)
+#define MPP_TYPE_ integer(i8_kind)
 #undef MPP_UPDATE_DOMAINS_2D_
 #define MPP_UPDATE_DOMAINS_2D_ mpp_update_domain2D_i8_2D
 #undef MPP_UPDATE_DOMAINS_3D_
@@ -1051,12 +1050,11 @@ end subroutine init_nonblock_type
 #undef MPP_REDISTRIBUTE_5D_
 #define MPP_REDISTRIBUTE_5D_ mpp_redistribute_i8_5D
 #include <mpp_update_domains2D.h>
-#endif
 
 #undef VECTOR_FIELD_
 #define VECTOR_FIELD_
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(FLOAT_KIND)
+#define MPP_TYPE_ real(r4_kind)
 #undef MPP_UPDATE_DOMAINS_2D_
 #define MPP_UPDATE_DOMAINS_2D_ mpp_update_domain2D_r4_2D
 #undef MPP_UPDATE_DOMAINS_3D_
@@ -1088,7 +1086,7 @@ end subroutine init_nonblock_type
 
 #ifdef OVERLOAD_C4
 #undef MPP_TYPE_
-#define MPP_TYPE_ complex(FLOAT_KIND)
+#define MPP_TYPE_ complex(c4_kind)
 #undef MPP_UPDATE_DOMAINS_2D_
 #define MPP_UPDATE_DOMAINS_2D_ mpp_update_domain2D_c4_2D
 #undef MPP_UPDATE_DOMAINS_3D_
@@ -1109,7 +1107,7 @@ end subroutine init_nonblock_type
 #endif
 
 #undef MPP_TYPE_
-#define MPP_TYPE_ integer(INT_KIND)
+#define MPP_TYPE_ integer(i4_kind)
 #undef MPP_UPDATE_DOMAINS_2D_
 #define MPP_UPDATE_DOMAINS_2D_ mpp_update_domain2D_i4_2D
 #undef MPP_UPDATE_DOMAINS_3D_
@@ -1139,7 +1137,7 @@ end subroutine init_nonblock_type
 #undef VECTOR_FIELD_
 #define VECTOR_FIELD_
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(DOUBLE_KIND)
+#define MPP_TYPE_ real(r8_kind)
 #undef MPP_START_UPDATE_DOMAINS_2D_
 #define MPP_START_UPDATE_DOMAINS_2D_ mpp_start_update_domain2D_r8_2D
 #undef MPP_START_UPDATE_DOMAINS_3D_
@@ -1179,7 +1177,7 @@ end subroutine init_nonblock_type
 #ifdef OVERLOAD_C8
 #undef  VECTOR_FIELD_
 #undef MPP_TYPE_
-#define MPP_TYPE_ complex(DOUBLE_KIND)
+#define MPP_TYPE_ complex(c8_kind)
 #undef MPP_START_UPDATE_DOMAINS_2D_
 #define MPP_START_UPDATE_DOMAINS_2D_ mpp_start_update_domain2D_c8_2D
 #undef MPP_START_UPDATE_DOMAINS_3D_
@@ -1199,10 +1197,9 @@ end subroutine init_nonblock_type
 #include <mpp_update_domains2D_nonblock.h>
 #endif
 
-#ifndef no_8byte_integers
 #undef  VECTOR_FIELD_
 #undef MPP_TYPE_
-#define MPP_TYPE_ integer(LONG_KIND)
+#define MPP_TYPE_ integer(i8_kind)
 #undef MPP_START_UPDATE_DOMAINS_2D_
 #define MPP_START_UPDATE_DOMAINS_2D_ mpp_start_update_domain2D_i8_2D
 #undef MPP_START_UPDATE_DOMAINS_3D_
@@ -1220,12 +1217,11 @@ end subroutine init_nonblock_type
 #undef MPP_COMPLETE_UPDATE_DOMAINS_5D_
 #define MPP_COMPLETE_UPDATE_DOMAINS_5D_ mpp_complete_update_domain2D_i8_5D
 #include <mpp_update_domains2D_nonblock.h>
-#endif
 
 #undef VECTOR_FIELD_
 #define VECTOR_FIELD_
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(FLOAT_KIND)
+#define MPP_TYPE_ real(r4_kind)
 #undef MPP_START_UPDATE_DOMAINS_2D_
 #define MPP_START_UPDATE_DOMAINS_2D_ mpp_start_update_domain2D_r4_2D
 #undef MPP_START_UPDATE_DOMAINS_3D_
@@ -1265,7 +1261,7 @@ end subroutine init_nonblock_type
 #ifdef OVERLOAD_C4
 #undef VECTOR_FIELD_
 #undef MPP_TYPE_
-#define MPP_TYPE_ complex(FLOAT_KIND)
+#define MPP_TYPE_ complex(c4_kind)
 #undef MPP_START_UPDATE_DOMAINS_2D_
 #define MPP_START_UPDATE_DOMAINS_2D_ mpp_start_update_domain2D_c4_2D
 #undef MPP_START_UPDATE_DOMAINS_3D_
@@ -1287,7 +1283,7 @@ end subroutine init_nonblock_type
 
 #undef VECTOR_FIELD_
 #undef MPP_TYPE_
-#define MPP_TYPE_ integer(INT_KIND)
+#define MPP_TYPE_ integer(i4_kind)
 #undef MPP_START_UPDATE_DOMAINS_2D_
 #define MPP_START_UPDATE_DOMAINS_2D_ mpp_start_update_domain2D_i4_2D
 #undef MPP_START_UPDATE_DOMAINS_3D_
@@ -1314,7 +1310,7 @@ end subroutine init_nonblock_type
 !                                                                   !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(DOUBLE_KIND)
+#define MPP_TYPE_ real(r8_kind)
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_REAL8
 #undef MPP_START_DO_UPDATE_3D_
@@ -1330,7 +1326,7 @@ end subroutine init_nonblock_type
 
 #ifdef OVERLOAD_C8
 #undef MPP_TYPE_
-#define MPP_TYPE_ complex(DOUBLE_KIND)
+#define MPP_TYPE_ complex(c8_kind)
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_DOUBLE_COMPLEX
 #undef MPP_START_DO_UPDATE_3D_
@@ -1340,9 +1336,8 @@ end subroutine init_nonblock_type
 #include <mpp_do_update_nonblock.h>
 #endif
 
-#ifndef no_8byte_integers
 #undef MPP_TYPE_
-#define MPP_TYPE_ integer(LONG_KIND)
+#define MPP_TYPE_ integer(i8_kind)
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_INTEGER8
 #undef MPP_START_DO_UPDATE_3D_
@@ -1350,10 +1345,9 @@ end subroutine init_nonblock_type
 #undef MPP_COMPLETE_DO_UPDATE_3D_
 #define MPP_COMPLETE_DO_UPDATE_3D_ mpp_complete_do_update_i8_3D
 #include <mpp_do_update_nonblock.h>
-#endif
 
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(FLOAT_KIND)
+#define MPP_TYPE_ real(r4_kind)
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_REAL4
 #undef MPP_START_DO_UPDATE_3D_
@@ -1369,7 +1363,7 @@ end subroutine init_nonblock_type
 
 #ifdef OVERLOAD_C4
 #undef MPP_TYPE_
-#define MPP_TYPE_ complex(FLOAT_KIND)
+#define MPP_TYPE_ complex(c4_kind)
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_COMPLEX
 #undef MPP_START_DO_UPDATE_3D_
@@ -1380,7 +1374,7 @@ end subroutine init_nonblock_type
 #endif
 
 #undef MPP_TYPE_
-#define MPP_TYPE_ integer(INT_KIND)
+#define MPP_TYPE_ integer(i4_kind)
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_INTEGER4
 #undef MPP_START_DO_UPDATE_3D_
@@ -1393,7 +1387,7 @@ end subroutine init_nonblock_type
 #undef VECTOR_FIELD_
 #define VECTOR_FIELD_
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(DOUBLE_KIND)
+#define MPP_TYPE_ real(r8_kind)
 #undef MPP_DO_UPDATE_3D_
 #define MPP_DO_UPDATE_3D_ mpp_do_update_r8_3d
 #ifdef  VECTOR_FIELD_
@@ -1406,25 +1400,23 @@ end subroutine init_nonblock_type
 #ifdef OVERLOAD_C8
 #undef  VECTOR_FIELD_
 #undef MPP_TYPE_
-#define MPP_TYPE_ complex(DOUBLE_KIND)
+#define MPP_TYPE_ complex(c8_kind)
 #undef MPP_DO_UPDATE_3D_
 #define MPP_DO_UPDATE_3D_ mpp_do_update_c8_3d
 #include <mpp_do_update.h>
 #define VECTOR_FIELD_
 #endif
 
-#ifndef no_8byte_integers
 #undef MPP_TYPE_
-#define MPP_TYPE_ integer(LONG_KIND)
+#define MPP_TYPE_ integer(i8_kind)
 #undef MPP_DO_UPDATE_3D_
 #define MPP_DO_UPDATE_3D_ mpp_do_update_i8_3d
 #include <mpp_do_update.h>
-#endif
 
 #undef VECTOR_FIELD_
 #define VECTOR_FIELD_
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(FLOAT_KIND)
+#define MPP_TYPE_ real(r4_kind)
 #undef MPP_DO_UPDATE_3D_
 #define MPP_DO_UPDATE_3D_ mpp_do_update_r4_3d
 #ifdef  VECTOR_FIELD_
@@ -1437,7 +1429,7 @@ end subroutine init_nonblock_type
 #ifdef OVERLOAD_C4
 #undef  VECTOR_FIELD_
 #undef MPP_TYPE_
-#define MPP_TYPE_ complex(FLOAT_KIND)
+#define MPP_TYPE_ complex(c4_kind)
 #undef MPP_DO_UPDATE_3D_
 #define MPP_DO_UPDATE_3D_ mpp_do_update_c4_3d
 #include <mpp_do_update.h>
@@ -1445,14 +1437,14 @@ end subroutine init_nonblock_type
 #endif
 
 #undef MPP_TYPE_
-#define MPP_TYPE_ integer(INT_KIND)
+#define MPP_TYPE_ integer(i4_kind)
 #undef MPP_DO_UPDATE_3D_
 #define MPP_DO_UPDATE_3D_ mpp_do_update_i4_3d
 #include <mpp_do_update.h>
 
 
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(DOUBLE_KIND)
+#define MPP_TYPE_ real(r8_kind)
 #undef MPP_DO_CHECK_3D_
 #define MPP_DO_CHECK_3D_ mpp_do_check_r8_3d
 #ifdef  VECTOR_FIELD_
@@ -1465,25 +1457,23 @@ end subroutine init_nonblock_type
 #ifdef OVERLOAD_C8
 #undef  VECTOR_FIELD_
 #undef MPP_TYPE_
-#define MPP_TYPE_ complex(DOUBLE_KIND)
+#define MPP_TYPE_ complex(c8_kind)
 #undef MPP_DO_CHECK_3D_
 #define MPP_DO_CHECK_3D_ mpp_do_check_c8_3d
 #include <mpp_do_check.h>
 #define VECTOR_FIELD_
 #endif
 
-#ifndef no_8byte_integers
 #undef MPP_TYPE_
-#define MPP_TYPE_ integer(LONG_KIND)
+#define MPP_TYPE_ integer(i8_kind)
 #undef MPP_DO_CHECK_3D_
 #define MPP_DO_CHECK_3D_ mpp_do_check_i8_3d
 #include <mpp_do_check.h>
-#endif
 
 #undef VECTOR_FIELD_
 #define VECTOR_FIELD_
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(FLOAT_KIND)
+#define MPP_TYPE_ real(r4_kind)
 #undef MPP_DO_CHECK_3D_
 #define MPP_DO_CHECK_3D_ mpp_do_check_r4_3d
 #ifdef  VECTOR_FIELD_
@@ -1496,14 +1486,14 @@ end subroutine init_nonblock_type
 #ifdef OVERLOAD_C4
 #undef  VECTOR_FIELD_
 #undef MPP_TYPE_
-#define MPP_TYPE_ complex(FLOAT_KIND)
+#define MPP_TYPE_ complex(c4_kind)
 #undef MPP_DO_CHECK_3D_
 #define MPP_DO_CHECK_3D_ mpp_do_check_c4_3d
 #include <mpp_do_check.h>
 #endif
 
 #undef MPP_TYPE_
-#define MPP_TYPE_ integer(INT_KIND)
+#define MPP_TYPE_ integer(i4_kind)
 #undef MPP_DO_CHECK_3D_
 #define MPP_DO_CHECK_3D_ mpp_do_check_i4_3d
 #include <mpp_do_check.h>
@@ -1511,7 +1501,7 @@ end subroutine init_nonblock_type
 #undef VECTOR_FIELD_
 #define VECTOR_FIELD_
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(DOUBLE_KIND)
+#define MPP_TYPE_ real(r8_kind)
 #undef MPP_UPDATE_NEST_FINE_2D_
 #define MPP_UPDATE_NEST_FINE_2D_ mpp_update_nest_fine_r8_2D
 #undef MPP_UPDATE_NEST_FINE_3D_
@@ -1541,7 +1531,7 @@ end subroutine init_nonblock_type
 #ifdef OVERLOAD_C8
 #undef VECTOR_FIELD_
 #undef MPP_TYPE_
-#define MPP_TYPE_ complex(DOUBLE_KIND)
+#define MPP_TYPE_ complex(c8_kind)
 #undef MPP_UPDATE_NEST_FINE_2D_
 #define MPP_UPDATE_NEST_FINE_2D_ mpp_update_nest_fine_c8_2D
 #undef MPP_UPDATE_NEST_FINE_3D_
@@ -1557,10 +1547,9 @@ end subroutine init_nonblock_type
 #include <mpp_update_nest_domains.h>
 #endif
 
-#ifndef no_8byte_integers
 #undef VECTOR_FIELD_
 #undef MPP_TYPE_
-#define MPP_TYPE_ integer(LONG_KIND)
+#define MPP_TYPE_ integer(i8_kind)
 #undef MPP_UPDATE_NEST_FINE_2D_
 #define MPP_UPDATE_NEST_FINE_2D_ mpp_update_nest_fine_i8_2D
 #undef MPP_UPDATE_NEST_FINE_3D_
@@ -1574,12 +1563,11 @@ end subroutine init_nonblock_type
 #undef MPP_UPDATE_NEST_COARSE_4D_
 #define MPP_UPDATE_NEST_COARSE_4D_ mpp_update_nest_coarse_i8_4D
 #include <mpp_update_nest_domains.h>
-#endif
 
 #undef VECTOR_FIELD_
 #define VECTOR_FIELD_
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(FLOAT_KIND)
+#define MPP_TYPE_ real(r4_kind)
 #undef MPP_UPDATE_NEST_FINE_2D_
 #define MPP_UPDATE_NEST_FINE_2D_ mpp_update_nest_fine_r4_2D
 #undef MPP_UPDATE_NEST_FINE_3D_
@@ -1609,7 +1597,7 @@ end subroutine init_nonblock_type
 #ifdef OVERLOAD_C4
 #undef VECTOR_FIELD_
 #undef MPP_TYPE_
-#define MPP_TYPE_ complex(FLOAT_KIND)
+#define MPP_TYPE_ complex(c4_kind)
 #undef MPP_UPDATE_NEST_FINE_2D_
 #define MPP_UPDATE_NEST_FINE_2D_ mpp_update_nest_fine_c4_2D
 #undef MPP_UPDATE_NEST_FINE_3D_
@@ -1627,7 +1615,7 @@ end subroutine init_nonblock_type
 
 #undef VECTOR_FIELD_
 #undef MPP_TYPE_
-#define MPP_TYPE_ integer(INT_KIND)
+#define MPP_TYPE_ integer(i4_kind)
 #undef MPP_UPDATE_NEST_FINE_2D_
 #define MPP_UPDATE_NEST_FINE_2D_ mpp_update_nest_fine_i4_2D
 #undef MPP_UPDATE_NEST_FINE_3D_
@@ -1645,7 +1633,7 @@ end subroutine init_nonblock_type
 #undef VECTOR_FIELD_
 #define VECTOR_FIELD_
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(DOUBLE_KIND)
+#define MPP_TYPE_ real(r8_kind)
 #undef MPP_DO_UPDATE_NEST_FINE_3D_
 #define MPP_DO_UPDATE_NEST_FINE_3D_ mpp_do_update_nest_fine_r8_3D
 #undef MPP_DO_UPDATE_NEST_FINE_3D_V_
@@ -1659,7 +1647,7 @@ end subroutine init_nonblock_type
 #ifdef OVERLOAD_C8
 #undef VECTOR_FIELD_
 #undef MPP_TYPE_
-#define MPP_TYPE_ complex(DOUBLE_KIND)
+#define MPP_TYPE_ complex(c8_kind)
 #undef MPP_DO_UPDATE_NEST_FINE_3D_
 #define MPP_DO_UPDATE_NEST_FINE_3D_ mpp_do_update_nest_fine_c8_3D
 #undef MPP_DO_UPDATE_NEST_COARSE_3D_
@@ -1667,21 +1655,19 @@ end subroutine init_nonblock_type
 #include <mpp_do_update_nest.h>
 #endif
 
-#ifndef no_8byte_integers
 #undef VECTOR_FIELD_
 #undef MPP_TYPE_
-#define MPP_TYPE_ integer(LONG_KIND)
+#define MPP_TYPE_ integer(i8_kind)
 #undef MPP_DO_UPDATE_NEST_FINE_3D_
 #define MPP_DO_UPDATE_NEST_FINE_3D_ mpp_do_update_nest_fine_i8_3D
 #undef MPP_DO_UPDATE_NEST_COARSE_3D_
 #define MPP_DO_UPDATE_NEST_COARSE_3D_ mpp_do_update_nest_coarse_i8_3D
 #include <mpp_do_update_nest.h>
-#endif
 
 #undef VECTOR_FIELD_
 #define VECTOR_FIELD_
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(FLOAT_KIND)
+#define MPP_TYPE_ real(r4_kind)
 #undef MPP_DO_UPDATE_NEST_FINE_3D_
 #define MPP_DO_UPDATE_NEST_FINE_3D_ mpp_do_update_nest_fine_r4_3D
 #undef MPP_DO_UPDATE_NEST_FINE_3D_V_
@@ -1695,7 +1681,7 @@ end subroutine init_nonblock_type
 #ifdef OVERLOAD_C4
 #undef VECTOR_FIELD_
 #undef MPP_TYPE_
-#define MPP_TYPE_ complex(FLOAT_KIND)
+#define MPP_TYPE_ complex(c4_kind)
 #undef MPP_DO_UPDATE_NEST_FINE_3D_
 #define MPP_DO_UPDATE_NEST_FINE_3D_ mpp_do_update_nest_fine_c4_3D
 #undef MPP_DO_UPDATE_NEST_COARSE_3D_
@@ -1705,7 +1691,7 @@ end subroutine init_nonblock_type
 
 #undef VECTOR_FIELD_
 #undef MPP_TYPE_
-#define MPP_TYPE_ integer(INT_KIND)
+#define MPP_TYPE_ integer(i4_kind)
 #undef MPP_DO_UPDATE_NEST_FINE_3D_
 #define MPP_DO_UPDATE_NEST_FINE_3D_ mpp_do_update_nest_fine_i4_3D
 #undef MPP_DO_UPDATE_NEST_COARSE_3D_
@@ -1721,7 +1707,7 @@ end subroutine init_nonblock_type
 #undef VECTOR_FIELD_
 #define VECTOR_FIELD_
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(DOUBLE_KIND)
+#define MPP_TYPE_ real(r8_kind)
 #undef MPP_UPDATE_DOMAINS_AD_2D_
 #define MPP_UPDATE_DOMAINS_AD_2D_ mpp_update_domains_ad_2D_r8_2D
 #undef MPP_UPDATE_DOMAINS_AD_3D_
@@ -1745,7 +1731,7 @@ end subroutine init_nonblock_type
 #undef VECTOR_FIELD_
 #define VECTOR_FIELD_
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(FLOAT_KIND)
+#define MPP_TYPE_ real(r4_kind)
 #undef MPP_UPDATE_DOMAINS_AD_2D_
 #define MPP_UPDATE_DOMAINS_AD_2D_ mpp_update_domains_ad_2D_r4_2D
 #undef MPP_UPDATE_DOMAINS_AD_3D_
@@ -1770,7 +1756,7 @@ end subroutine init_nonblock_type
 #undef VECTOR_FIELD_
 #define VECTOR_FIELD_
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(DOUBLE_KIND)
+#define MPP_TYPE_ real(r8_kind)
 #undef MPP_DO_UPDATE_AD_3D_
 #define MPP_DO_UPDATE_AD_3D_ mpp_do_update_ad_r8_3d
 #ifdef  VECTOR_FIELD_
@@ -1783,25 +1769,23 @@ end subroutine init_nonblock_type
 #ifdef OVERLOAD_C8
 #undef  VECTOR_FIELD_
 #undef MPP_TYPE_
-#define MPP_TYPE_ complex(DOUBLE_KIND)
+#define MPP_TYPE_ complex(c8_kind)
 #undef MPP_DO_UPDATE_AD_3D_
 #define MPP_DO_UPDATE_AD_3D_ mpp_do_update_ad_c8_3d
 #include <mpp_do_update_ad.h>
 #define VECTOR_FIELD_
 #endif
 
-#ifndef no_8byte_integers
 #undef MPP_TYPE_
-#define MPP_TYPE_ integer(LONG_KIND)
+#define MPP_TYPE_ integer(i8_kind)
 #undef MPP_DO_UPDATE_AD_3D_
 #define MPP_DO_UPDATE_AD_3D_ mpp_do_update_ad_i8_3d
 #include <mpp_do_update_ad.h>
-#endif
 
 #undef VECTOR_FIELD_
 #define VECTOR_FIELD_
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(FLOAT_KIND)
+#define MPP_TYPE_ real(r4_kind)
 #undef MPP_DO_UPDATE_AD_3D_
 #define MPP_DO_UPDATE_AD_3D_ mpp_do_update_ad_r4_3d
 #ifdef  VECTOR_FIELD_
@@ -1814,7 +1798,7 @@ end subroutine init_nonblock_type
 #ifdef OVERLOAD_C4
 #undef  VECTOR_FIELD_
 #undef MPP_TYPE_
-#define MPP_TYPE_ complex(FLOAT_KIND)
+#define MPP_TYPE_ complex(c4_kind)
 #undef MPP_DO_UPDATE_AD_3D_
 #define MPP_DO_UPDATE_AD_3D_ mpp_do_update_ad_c4_3d
 #include <mpp_do_update_ad.h>
@@ -1822,14 +1806,14 @@ end subroutine init_nonblock_type
 #endif
 
 #undef MPP_TYPE_
-#define MPP_TYPE_ integer(INT_KIND)
+#define MPP_TYPE_ integer(i4_kind)
 #undef MPP_DO_UPDATE_AD_3D_
 #define MPP_DO_UPDATE_AD_3D_ mpp_do_update_ad_i4_3d
 #include <mpp_do_update_ad.h>
 !!$#undef VECTOR_FIELD_
 !!$#define VECTOR_FIELD_
 !!$#undef MPP_TYPE_
-!!$#define MPP_TYPE_ real(DOUBLE_KIND)
+!!$#define MPP_TYPE_ real(r8_kind)
 !!$#undef MPP_DO_UPDATE_AD_3D_
 !!$#define MPP_DO_UPDATE_AD_3D_ mpp_do_update_ad_r8_3d
 !!$#ifdef  VECTOR_FIELD_
@@ -1842,7 +1826,7 @@ end subroutine init_nonblock_type
 !!$
 !!$#ifdef OVERLOAD_C8
 !!$#undef MPP_TYPE_
-!!$#define MPP_TYPE_ complex(DOUBLE_KIND)
+!!$#define MPP_TYPE_ complex(c8_kind)
 !!$#undef MPP_DO_UPDATE_AD_3D_
 !!$#define MPP_DO_UPDATE_AD_3D_ mpp_do_update_ad_c8_3d
 !!$#include <mpp_do_update_ad.h>
@@ -1850,7 +1834,7 @@ end subroutine init_nonblock_type
 !!$
 !!$#ifndef no_8byte_integers
 !!$#undef MPP_TYPE_
-!!$#define MPP_TYPE_ integer(LONG_KIND)
+!!$#define MPP_TYPE_ integer(i8_kind)
 !!$#undef MPP_DO_UPDATE_AD_3D_
 !!$#define MPP_DO_UPDATE_AD_3D_ mpp_do_update_ad_i8_3d
 !!$#include <mpp_do_update_ad.h>
@@ -1860,7 +1844,7 @@ end subroutine init_nonblock_type
 !!$#undef  VECTOR_FIELD_
 !!$#define VECTOR_FIELD_
 !!$#undef MPP_TYPE_
-!!$#define MPP_TYPE_ real(FLOAT_KIND)
+!!$#define MPP_TYPE_ real(r4_kind)
 !!$#undef MPP_DO_UPDATE_AD_3D_
 !!$#define MPP_DO_UPDATE_AD_3D_ mpp_do_update_ad_r4_3d
 !!$#ifdef  VECTOR_FIELD_
@@ -1874,14 +1858,14 @@ end subroutine init_nonblock_type
 !!$#ifdef OVERLOAD_C4
 !!$#undef  VECTOR_FIELD_
 !!$#undef MPP_TYPE_
-!!$#define MPP_TYPE_ complex(FLOAT_KIND)
+!!$#define MPP_TYPE_ complex(c4_kind)
 !!$#undef MPP_DO_UPDATE_AD_3D_
 !!$#define MPP_DO_UPDATE_AD_3D_ mpp_do_update_ad_c4_3d
 !!$#include <mpp_do_update_ad.h>
 !!$#endif
 !!$
 !!$#undef MPP_TYPE_
-!!$#define MPP_TYPE_ integer(INT_KIND)
+!!$#define MPP_TYPE_ integer(i4_kind)
 !!$#undef MPP_DO_UPDATE_AD_3D_
 !!$#define MPP_DO_UPDATE_AD_3D_ mpp_do_update_ad_i4_3d
 !!$#include <mpp_do_update_ad.h>
@@ -1891,7 +1875,7 @@ end subroutine init_nonblock_type
 
 !********************************************************
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(DOUBLE_KIND)
+#define MPP_TYPE_ real(r8_kind)
 #undef MPP_DO_REDISTRIBUTE_3D_
 #define MPP_DO_REDISTRIBUTE_3D_ mpp_do_redistribute_r8_3D
 #include <mpp_do_redistribute.h>
@@ -1899,28 +1883,26 @@ end subroutine init_nonblock_type
 
 #ifdef OVERLOAD_C8
 #undef MPP_TYPE_
-#define MPP_TYPE_ complex(DOUBLE_KIND)
+#define MPP_TYPE_ complex(c8_kind)
 #undef MPP_DO_REDISTRIBUTE_3D_
 #define MPP_DO_REDISTRIBUTE_3D_ mpp_do_redistribute_c8_3D
 #include <mpp_do_redistribute.h>
 #endif
 
-#ifndef no_8byte_integers
 #undef MPP_TYPE_
-#define MPP_TYPE_ integer(LONG_KIND)
+#define MPP_TYPE_ integer(i8_kind)
 #undef MPP_DO_REDISTRIBUTE_3D_
 #define MPP_DO_REDISTRIBUTE_3D_ mpp_do_redistribute_i8_3D
 #include <mpp_do_redistribute.h>
 
 #undef MPP_TYPE_
-#define MPP_TYPE_ logical(LONG_KIND)
+#define MPP_TYPE_ logical(l8_kind)
 #undef MPP_DO_REDISTRIBUTE_3D_
 #define MPP_DO_REDISTRIBUTE_3D_ mpp_do_redistribute_l8_3D
 #include <mpp_do_redistribute.h>
-#endif
 
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(FLOAT_KIND)
+#define MPP_TYPE_ real(r4_kind)
 #undef MPP_DO_REDISTRIBUTE_3D_
 #define MPP_DO_REDISTRIBUTE_3D_ mpp_do_redistribute_r4_3D
 #include <mpp_do_redistribute.h>
@@ -1928,26 +1910,26 @@ end subroutine init_nonblock_type
 
 #ifdef OVERLOAD_C4
 #undef MPP_TYPE_
-#define MPP_TYPE_ complex(FLOAT_KIND)
+#define MPP_TYPE_ complex(c4_kind)
 #undef MPP_DO_REDISTRIBUTE_3D_
 #define MPP_DO_REDISTRIBUTE_3D_ mpp_do_redistribute_c4_3D
 #include <mpp_do_redistribute.h>
 #endif
 
 #undef MPP_TYPE_
-#define MPP_TYPE_ integer(INT_KIND)
+#define MPP_TYPE_ integer(i4_kind)
 #undef MPP_DO_REDISTRIBUTE_3D_
 #define MPP_DO_REDISTRIBUTE_3D_ mpp_do_redistribute_i4_3D
 #include <mpp_do_redistribute.h>
 
 #undef MPP_TYPE_
-#define MPP_TYPE_ logical(INT_KIND)
+#define MPP_TYPE_ logical(l4_kind)
 #undef MPP_DO_REDISTRIBUTE_3D_
 #define MPP_DO_REDISTRIBUTE_3D_ mpp_do_redistribute_l4_3D
 #include <mpp_do_redistribute.h>
 
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(DOUBLE_KIND)
+#define MPP_TYPE_ real(r8_kind)
 #undef MPP_GET_BOUNDARY_2D_
 #define MPP_GET_BOUNDARY_2D_ mpp_get_boundary_r8_2d
 #undef MPP_GET_BOUNDARY_3D_
@@ -1967,7 +1949,7 @@ end subroutine init_nonblock_type
 #include <mpp_get_boundary.h>
 
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(DOUBLE_KIND)
+#define MPP_TYPE_ real(r8_kind)
 #undef MPP_GET_BOUNDARY_AD_2D_
 #define MPP_GET_BOUNDARY_AD_2D_ mpp_get_boundary_ad_r8_2d
 #undef MPP_GET_BOUNDARY_AD_3D_
@@ -1979,7 +1961,7 @@ end subroutine init_nonblock_type
 #include <mpp_get_boundary_ad.h>
 
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(FLOAT_KIND)
+#define MPP_TYPE_ real(r4_kind)
 #undef MPP_GET_BOUNDARY_2D_
 #define MPP_GET_BOUNDARY_2D_ mpp_get_boundary_r4_2d
 #undef MPP_GET_BOUNDARY_3D_
@@ -1999,7 +1981,7 @@ end subroutine init_nonblock_type
 #include <mpp_get_boundary.h>
 
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(FLOAT_KIND)
+#define MPP_TYPE_ real(r4_kind)
 #undef MPP_GET_BOUNDARY_AD_2D_
 #define MPP_GET_BOUNDARY_AD_2D_ mpp_get_boundary_ad_r4_2d
 #undef MPP_GET_BOUNDARY_AD_3D_
@@ -2011,7 +1993,7 @@ end subroutine init_nonblock_type
 #include <mpp_get_boundary_ad.h>
 
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(DOUBLE_KIND)
+#define MPP_TYPE_ real(r8_kind)
 #undef MPP_DO_GET_BOUNDARY_3D_
 #define MPP_DO_GET_BOUNDARY_3D_ mpp_do_get_boundary_r8_3d
 #undef MPP_DO_GET_BOUNDARY_3DV_
@@ -2019,7 +2001,7 @@ end subroutine init_nonblock_type
 #include <mpp_do_get_boundary.h>
 
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(DOUBLE_KIND)
+#define MPP_TYPE_ real(r8_kind)
 #undef MPP_DO_GET_BOUNDARY_AD_3D_
 #define MPP_DO_GET_BOUNDARY_AD_3D_ mpp_do_get_boundary_ad_r8_3d
 #undef MPP_DO_GET_BOUNDARY_AD_3DV_
@@ -2027,7 +2009,7 @@ end subroutine init_nonblock_type
 #include <mpp_do_get_boundary_ad.h>
 
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(FLOAT_KIND)
+#define MPP_TYPE_ real(r4_kind)
 #undef MPP_DO_GET_BOUNDARY_3D_
 #define MPP_DO_GET_BOUNDARY_3D_ mpp_do_get_boundary_r4_3d
 #undef MPP_DO_GET_BOUNDARY_3D_V_
@@ -2035,7 +2017,7 @@ end subroutine init_nonblock_type
 #include <mpp_do_get_boundary.h>
 
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(FLOAT_KIND)
+#define MPP_TYPE_ real(r4_kind)
 #undef MPP_DO_GET_BOUNDARY_AD_3D_
 #define MPP_DO_GET_BOUNDARY_AD_3D_ mpp_do_get_boundary_ad_r4_3d
 #undef MPP_DO_GET_BOUNDARY_AD_3D_V_
@@ -2043,7 +2025,7 @@ end subroutine init_nonblock_type
 #include <mpp_do_get_boundary_ad.h>
 
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(DOUBLE_KIND)
+#define MPP_TYPE_ real(r8_kind)
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_REAL8
 #undef MPP_CREATE_GROUP_UPDATE_2D_
@@ -2079,7 +2061,7 @@ end subroutine init_nonblock_type
 #include <mpp_group_update.h>
 
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(FLOAT_KIND)
+#define MPP_TYPE_ real(r4_kind)
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_REAL4
 #undef MPP_CREATE_GROUP_UPDATE_2D_

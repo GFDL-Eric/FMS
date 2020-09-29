@@ -27,6 +27,7 @@ AM_CPPFLAGS = -I${top_srcdir}/include
 AM_CPPFLAGS += -I${top_builddir}/constants
 AM_CPPFLAGS += -I${top_builddir}/fms
 AM_CPPFLAGS += -I${top_builddir}/mpp
+AM_CPPFLAGS += -I${top_builddir}/platform
 
 # Build these uninstalled convenience library.
 noinst_LTLIBRARIES = libsat_vapor_pres_k.la libsat_vapor_pres.la

@@ -36,7 +36,7 @@
 #undef MPP_READ_2DDECOMP_4D_
 #define MPP_READ_2DDECOMP_4D_ mpp_read_2ddecomp_r4d
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(DOUBLE_KIND)
+#define MPP_TYPE_ real(r8_kind)
 #include <mpp_read_2Ddecomp.h>
 
 #undef READ_RECORD_CORE_
@@ -50,7 +50,7 @@
 #undef MPP_READ_2DDECOMP_4D_
 #define MPP_READ_2DDECOMP_4D_ mpp_read_2ddecomp_r4d_r4
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(FLOAT_KIND)
+#define MPP_TYPE_ real(r4_kind)
 #include <mpp_read_2Ddecomp.h>
 
 #undef MPP_READ_COMPRESSED_1D_
@@ -129,7 +129,7 @@
     subroutine mpp_read_region_r2D(unit, field, data, start, nread)
       integer,         intent(in) :: unit
       type(fieldtype), intent(in) :: field
-      real(FLOAT_KIND),         intent(inout) :: data(:,:)
+      real(r4_kind),         intent(inout) :: data(:,:)
       integer,         intent(in) :: start(:), nread(:)
 
       if(size(start(:)) .NE. 4 .OR. size(nread(:)) .NE. 4) call mpp_error(FATAL, &
@@ -150,7 +150,7 @@
     subroutine mpp_read_region_r3D(unit, field, data, start, nread)
       integer,         intent(in) :: unit
       type(fieldtype), intent(in) :: field
-      real(FLOAT_KIND),         intent(inout) :: data(:,:,:)
+      real(r4_kind),         intent(inout) :: data(:,:,:)
       integer,         intent(in) :: start(:), nread(:)
 
       if(size(start(:)) .NE. 4 .OR. size(nread(:)) .NE. 4) call mpp_error(FATAL, &
@@ -169,7 +169,7 @@
     subroutine mpp_read_region_r2D_r8(unit, field, data, start, nread)
       integer,                intent(in) :: unit
       type(fieldtype),        intent(in) :: field
-      real(kind=DOUBLE_KIND), intent(inout) :: data(:,:)
+      real(kind=r8_kind), intent(inout) :: data(:,:)
       integer,                intent(in) :: start(:), nread(:)
 
       if(size(start(:)) .NE. 4 .OR. size(nread(:)) .NE. 4) call mpp_error(FATAL, &
@@ -188,7 +188,7 @@
     subroutine mpp_read_region_r3D_r8(unit, field, data, start, nread)
       integer,                intent(in) :: unit
       type(fieldtype),        intent(in) :: field
-      real(kind=DOUBLE_KIND), intent(inout) :: data(:,:,:)
+      real(kind=r8_kind), intent(inout) :: data(:,:,:)
       integer,                intent(in) :: start(:), nread(:)
 
       if(size(start(:)) .NE. 4 .OR. size(nread(:)) .NE. 4) call mpp_error(FATAL, &
@@ -318,14 +318,14 @@
       integer, allocatable, dimension(:) :: dimids
       character(len=128) :: name, attname, unlimname, attval, bounds_name
       logical :: isdim, found_bounds, get_time_info
-      integer(LONG_KIND) :: checksumf
+      integer(i8_kind) :: checksumf
       character(len=64)  :: checksum_char
       integer :: num_checksumf, last, is, k
 
-      integer(SHORT_KIND), allocatable :: i2vals(:)
-      integer(INT_KIND), allocatable :: ivals(:)
-      real(FLOAT_KIND), allocatable  :: rvals(:)
-      real(DOUBLE_KIND), allocatable :: r8vals(:)
+      integer(i2_kind), allocatable :: i2vals(:)
+      integer(i4_kind), allocatable :: ivals(:)
+      real(r4_kind), allocatable  :: rvals(:)
+      real(r8_kind), allocatable :: r8vals(:)
 
       get_time_info = .TRUE.
       if(present(read_time)) get_time_info = read_time

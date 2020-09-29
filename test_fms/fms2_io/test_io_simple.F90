@@ -23,7 +23,7 @@
 
 program test_io_simple
 #ifndef use_mpp_io
-  use, intrinsic :: iso_fortran_env, only : real32, real64, int32, int64, error_unit, output_unit
+  use, intrinsic :: iso_fortran_env, only : error_unit, output_unit
   use mpi
   use fms2_io_mod
   use netcdf_io_mod
@@ -31,6 +31,7 @@ program test_io_simple
   use mpp_mod
   use setup
   use netcdf
+  use platform_mod
   implicit none
   
   type(Params) :: test_params  !> Some test parameters.
@@ -60,7 +61,7 @@ program test_io_simple
   integer :: ncid                        !> File ID for checking file.
   character (len = 80) :: testfile       !> Base name for file created in test.
   integer :: numfilesatt                 !> Value for global att in test file.
-  real (kind=real64) :: att1             !> Value for global att in test file.
+  real (kind=r8_kind) :: att1             !> Value for global att in test file.
   character (len = 120), dimension(3) :: my_format !> Array of formats to try.
   character (len = 6), dimension(4) :: names !> Dim name.
   character (len = 6) :: dimname !> Dim name we will read in.
@@ -70,8 +71,8 @@ program test_io_simple
   integer, dimension(1) :: dimids !> More var info we will read in.
   integer :: nAtts !> More var info we will read in.
   integer, dimension(4) :: domain_decomposition !> Domain decomposition we will read.
-  real (kind = real64), dimension(96) :: double_buffer !> Data we will write.
-  real (kind = real64), dimension(96) :: double_buffer_in !> Data we will read to check.
+  real (kind = r8_kind), dimension(96) :: double_buffer !> Data we will write.
+  real (kind = r8_kind), dimension(96) :: double_buffer_in !> Data we will read to check.
   integer :: i    !> Index for do loop.
   integer :: j    !> Index for do loop.
   integer :: err  !> Return code.
@@ -114,7 +115,7 @@ program test_io_simple
           domain, nc_format=my_format(1), is_restart=.false.))
 
      ! Add a global attribute.
-     call register_global_attribute(fileobj, "globalatt1", real(7., kind=real64))
+     call register_global_attribute(fileobj, "globalatt1", real(7., kind=r8_kind))
 
      ! Add a dimension.
      call register_axis(fileobj, "lon", "x")

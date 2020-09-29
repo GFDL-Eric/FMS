@@ -44,7 +44,7 @@
       integer :: npes, p, threading_flag
       type(domain2d), pointer :: io_domain=>NULL()
       logical :: compute_chksum,print_compressed_chksum
-      integer(LONG_KIND) ::chk
+      integer(i8_kind) ::chk
 
       call mpp_clock_begin(mpp_read_clock)
 
@@ -138,7 +138,7 @@
       integer :: npes, p, threading_flag
       type(domain2d), pointer :: io_domain=>NULL()
       logical :: compute_chksum,print_compressed_chksum
-      integer(LONG_KIND) ::chk
+      integer(i8_kind) ::chk
 
       call mpp_clock_begin(mpp_read_clock)
 
