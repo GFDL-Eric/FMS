@@ -100,7 +100,7 @@ test_chksum_int_SOURCES=test_chksum_int.F90
 
 # Run the test programs.
 TESTS = test_mpp_domains2.sh \
-  test_mpp_pset2.sh \
+	test_mpp_pset2.sh \
   test_mpp2.sh \
   test_mpp_memuse \
   test_mpp_mem_dump \
@@ -128,7 +128,7 @@ TESTS = test_mpp_domains2.sh \
 
 # These files will also be included in the distribution.
 EXTRA_DIST = input_base.nml \
-  test_mpp_domains2.sh \
+	test_mpp_domains2.sh \
   test_mpp_pset2.sh     \
   test_mpp2.sh \
   test_mpp_memutils_mod.sh \
