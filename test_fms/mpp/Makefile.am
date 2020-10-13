@@ -86,14 +86,16 @@ test_mpp_npes_SOURCES = test_mpp_npes.F90
 test_mpp_pe_SOURCES = test_mpp_pe.F90
 test_mpp_root_pe_SOURCES=test_mpp_root_pe.F90
 test_peset_SOURCES=test_peset.F90
-test_mpp_update_domains_SOURCES = test_mpp_update_domains.F90 fill_halo.F90 \
+test_mpp_update_domains_SOURCES = test_mpp_update_domains_main.F90 \
+                                  test_mpp_update_domains_real.F90 \
+                                  test_mpp_update_domains_int.F90 \
+                                  fill_halo.F90 \
                                   compare_data_checksums.F90
 test_mpp_gatscat_SOURCES=test_mpp_gatscat.F90
 test_mpp_sendrecv_SOURCES=test_mpp_sendrecv.F90
 test_mpp_sum_SOURCES=test_mpp_sum.F90
 test_update_domains_performance_SOURCES=test_update_domains_performance.F90 \
                                         compare_data_checksums.F90
-test_mpp_alltoall_SOURCES = test_mpp_alltoall.F90
 test_minmax_SOURCES=test_minmax.F90
 test_mpp_update_domains_ad_SOURCES=test_mpp_update_domains_ad.F90 compare_data_checksums.F90
 test_global_minmax_SOURCES=test_global_minmax.F90
@@ -164,10 +166,16 @@ EXTRA_DIST = input_base.nml \
 
 compare_data_checksums.mod : compare_data_checksums.$(OBJEXT)
 fill_halo.mod : fill_halo.$(OBJEXT)
-test_mpp_update_domains.$(OBJEXT) : fill_halo.mod compare_data_checksums.mod
+test_mpp_update_domains_real.mod : test_mpp_update_domains_real.$(OBJEXT)
+test_mpp_update_domains_int.mod : test_mpp_update_domains_int.$(OBJEXT)
+test_mpp_update_domains_main.mod : test_mpp_update_domains_main.$(OBJEXT)
+test_mpp_update_domains_main.$(OBJEXT) : test_mpp_update_domains_real.mod test_mpp_update_domains_int.mod
+test_mpp_update_domains_real.$(OBJEXT) : fill_halo.mod compare_data_checksums.mod
+test_mpp_update_domains_int.$(OBJEXT) : fill_halo.mod
 test_update_domains_performance.$(OBJEXT) : compare_data_checksums.mod
 test_mpp_update_domains_ad.$(OBJEXT) : compare_data_checksums.mod
 
 # Clean up
 CLEANFILES = input.nml input_alternative.nml input_blank.nml empty.nml *.out* *.tst* \
-						 include_files_mod.mod ascii* test_numb*
+						 include_files_mod.mod ascii* test_numb* test_mpp_update_domains*.mod \
+             fill_halo.mod compare_data_checksums.mod

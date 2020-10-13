@@ -17,26 +17,25 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @author Jessica Liptak
-!> @brief Test mpp_update_domains using different layouts and data precision
+!> @brief Test mpp_update_domains on arrays of real numbers using different layouts and data precision
 !> @note This test is an extension of the routine test_halo_upate in test_mpp_domains.
-program test_mpp_update_domains
+module test_mpp_update_domains_real
 
   use compare_data_checksums, only : compare_checksums
   use fill_halo
   use mpp_mod, only : FATAL, WARNING, MPP_DEBUG, NOTE, MPP_CLOCK_SYNC,MPP_CLOCK_DETAILED
-  use mpp_mod, only : mpp_init, mpp_exit, mpp_pe, mpp_npes, mpp_root_pe, mpp_error
+  use mpp_mod, only : mpp_pe, mpp_npes, mpp_root_pe, mpp_error
   use mpp_mod, only : mpp_clock_id, mpp_clock_begin, mpp_clock_end, mpp_sync
   use mpp_mod, only : mpp_declare_pelist, mpp_set_current_pelist, mpp_set_stack_size
   use mpp_mod, only : mpp_broadcast, mpp_transmit, mpp_sum, mpp_max, mpp_chksum, ALL_PES
-  use mpp_mod, only : mpp_gather, mpp_error, mpp_sync_self
-  use mpp_mod, only : mpp_init_test_requests_allocated
+  use mpp_mod, only : mpp_gather, mpp_sync_self
   use mpp_domains_mod, only : GLOBAL_DATA_DOMAIN, BITWISE_EXACT_SUM, BGRID_NE, CGRID_NE, DGRID_NE, AGRID
   use mpp_domains_mod, only : FOLD_SOUTH_EDGE, FOLD_NORTH_EDGE, FOLD_WEST_EDGE, FOLD_EAST_EDGE
   use mpp_domains_mod, only : MPP_DOMAIN_TIME, CYCLIC_GLOBAL_DOMAIN, NUPDATE,EUPDATE, XUPDATE, YUPDATE, SCALAR_PAIR
   use mpp_domains_mod, only : domain1D, domain2D, DomainCommunicator2D, BITWISE_EFP_SUM
-  use mpp_domains_mod, only : mpp_get_compute_domain, mpp_get_data_domain, mpp_domains_set_stack_size
+  use mpp_domains_mod, only : mpp_get_compute_domain, mpp_get_data_domain
   use mpp_domains_mod, only : mpp_global_field, mpp_global_sum, mpp_global_max, mpp_global_min
-  use mpp_domains_mod, only : mpp_domains_init, mpp_domains_exit, mpp_broadcast_domain
+  use mpp_domains_mod, only : mpp_broadcast_domain
   use mpp_domains_mod, only : mpp_update_domains, mpp_check_field, mpp_redistribute, mpp_get_memory_domain
   use mpp_domains_mod, only : mpp_define_layout, mpp_define_domains, mpp_modify_domain
   use mpp_domains_mod, only : mpp_get_neighbor_pe, mpp_define_mosaic, mpp_nullify_domain_list
@@ -44,13 +43,11 @@ program test_mpp_update_domains
   use mpp_domains_mod, only : SOUTH, SOUTH_WEST, WEST, NORTH_WEST, mpp_define_mosaic_pelist
   use mpp_domains_mod, only : mpp_get_global_domain, ZERO, NINETY, MINUS_NINETY
   use mpp_domains_mod, only : mpp_deallocate_domain
-  use mpp_io_mod, only: mpp_io_init
   use platform_mod
 
   implicit none
-
-  integer :: ierr, id
-  integer :: pe, npes
+  private
+  integer :: id
   integer :: nx=64, ny=64, nz=10, stackmax=10000000
   integer :: i, j, k, n
   integer :: layout(2)
@@ -65,51 +62,8 @@ program test_mpp_update_domains
   integer :: layout_cubic(2) = (/0,0/)
   integer :: layout_tripolar(2) = (/0,0/)
   integer :: layout_ensemble(2) = (/0,0/)
-  !> Initialize mpp and mpp IO modules
-  call mpp_init(test_level=mpp_init_test_requests_allocated)
-  call mpp_domains_init(MPP_DOMAIN_TIME)
-  call mpp_io_init()
-  call mpp_domains_set_stack_size(stackmax)
-  pe = mpp_pe()
-  npes = mpp_npes()
-  !> run the tests
-  if (mpp_pe() == mpp_root_pe()) &
-    print *, '--------------------> Calling test_halo_update <-------------------'
-  call test_halo_update_r8( 'Simple' ) !includes global field, global sum tests
-  call test_halo_update_r8( 'Cyclic' )
-  call test_halo_update_r8( 'Folded-north' ) !includes vector field test
-  call test_halo_update_r8( 'Masked' ) !includes vector field test
-  call test_halo_update_r8( 'Folded xy_halo' ) !
-  call test_halo_update_r8( 'Simple symmetry' ) !includes global field, global sum tests
-  call test_halo_update_r8( 'Cyclic symmetry' )
-  call test_halo_update_r8( 'Folded-north symmetry' ) !includes vector field test
-  call test_halo_update_r8( 'Folded-south symmetry' ) !includes vector field test
-  call test_halo_update_r8( 'Folded-west symmetry' ) !includes vector field test
-  call test_halo_update_r8( 'Folded-east symmetry' ) !includes vector field test
+  public :: test_halo_update_r8, test_halo_update_r4, test_subset_update_r8, test_subset_update_r4
 
-  call test_halo_update_r4( 'Simple' ) !includes global field, global sum tests
-  call test_halo_update_r4( 'Cyclic' )
-  call test_halo_update_r4( 'Folded-north' ) !includes vector field test
-  call test_halo_update_r4( 'Masked' ) !includes vector field test
-  call test_halo_update_r4( 'Folded xy_halo' ) !
-  call test_halo_update_r4( 'Simple symmetry' ) !includes global field, global sum tests
-  call test_halo_update_r4( 'Cyclic symmetry' )
-  call test_halo_update_r4( 'Folded-north symmetry' ) !includes vector field test
-  call test_halo_update_r4( 'Folded-south symmetry' ) !includes vector field test
-  call test_halo_update_r4( 'Folded-west symmetry' ) !includes vector field test
-  call test_halo_update_r4( 'Folded-east symmetry' ) !includes vector field test
-  ! pe subset test
-  !> @todo resolve issue. This test triggers an error in mpp_clock_begin called by mpp_update_domains
-  !! cannot change pelist context of a clock.
-  if (mpp_npes() .GE. 16) then
-    if (mpp_pe() == mpp_root_pe()) &
-      print *, '--------------------> Calling test_subset_update <-------------------'
-    call test_subset_update_r8
-    call test_subset_update_r4
-  endif
-  call mpp_domains_exit()
-  !> Finalize mpp
-  call MPI_FINALIZE(ierr)
   contains
 
   !> Perform simple addition on 64-bit real arrays in different domain configurations and update the domains
@@ -123,7 +77,10 @@ program test_mpp_update_domains
     integer              :: shift, i, xhalo, yhalo
     logical              :: is_symmetry, folded_south, folded_west, folded_east
     integer              :: is, ie, js, je, isd, ied, jsd, jed
+    integer :: pe, npes
 
+    pe = mpp_pe()
+    npes = mpp_npes()
     ! when testing maskmap option, nx*ny should be able to be divided by both npes and npes+1
     if ((domain_type == 'Masked') .OR. (domain_type == 'Masked symmetry')) then
       if((mod(nx*ny, npes) .NE. 0) .OR. (mod(nx*ny, npes+1) .NE. 0)) then
@@ -515,6 +472,10 @@ program test_mpp_update_domains
    integer              :: shift, i, xhalo, yhalo
    logical              :: is_symmetry, folded_south, folded_west, folded_east
    integer              :: is, ie, js, je, isd, ied, jsd, jed
+   integer :: pe, npes
+
+   pe = mpp_pe()
+   npes = mpp_npes()
 
    ! when testing maskmap option, nx*ny should be able to be divided by both npes and npes+1
    if((domain_type == 'Masked') .OR. (domain_type == 'Masked symmetry')) then
@@ -901,6 +862,10 @@ program test_mpp_update_domains
    integer              :: is, ie, js, je, isd, ied, jsd, jed
    integer :: pes9(9)=(/1,2,4,6,8,10,12,13,15/)
    integer :: ni, nj
+   integer :: pe, npes
+
+   pe = mpp_pe()
+   npes = mpp_npes()
 
    call mpp_declare_pelist(pes9)
    if(any(mpp_pe()==pes9)) then
@@ -959,6 +924,10 @@ program test_mpp_update_domains
    integer              :: is, ie, js, je, isd, ied, jsd, jed
    integer :: pes9(9)=(/1,2,4,6,8,10,12,13,15/)
    integer :: ni, nj
+   integer :: pe, npes
+
+   pe = mpp_pe()
+   npes = mpp_npes()
 
    call mpp_declare_pelist(pes9)
    if(any(mpp_pe()==pes9)) then
@@ -1007,4 +976,4 @@ program test_mpp_update_domains
 
   end subroutine test_subset_update_r4
 
-end program test_mpp_update_domains 
+end module test_mpp_update_domains_real

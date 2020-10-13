@@ -1832,13 +1832,13 @@ end subroutine init_nonblock_type
 !!$#include <mpp_do_update_ad.h>
 !!$#endif
 !!$
-!!$#ifndef no_8byte_integers
+!!$
 !!$#undef MPP_TYPE_
 !!$#define MPP_TYPE_ integer(i8_kind)
 !!$#undef MPP_DO_UPDATE_AD_3D_
 !!$#define MPP_DO_UPDATE_AD_3D_ mpp_do_update_ad_i8_3d
 !!$#include <mpp_do_update_ad.h>
-!!$#endif
+!!$
 !!$
 !!$#ifdef OVERLOAD_R4
 !!$#undef  VECTOR_FIELD_

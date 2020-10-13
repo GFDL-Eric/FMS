@@ -17,12 +17,12 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @author Jessica Liptak
-!> @brief Compare the checksums of 2D and 3D real 32-bit or 64-bit arrays
+!> @brief Compare the checksums of 2D and 3D 32-bit or 64-bit real and integer arrays
 module compare_data_checksums
 
 use mpp_mod, only : mpp_root_pe, mpp_chksum, mpp_error, mpp_sync_self, mpp_pe
 use mpp_mod, only : FATAL, NOTE
-use platform_mod
+use platform_mod, only : r4_kind, r8_kind, i8_kind
 
 implicit none
 private
@@ -78,7 +78,7 @@ contains
     else
       call mpp_error( FATAL, trim(chk_str)//': checksums do not match.' )
     end if
-   end subroutine compare_checksums_2D_r4
+  end subroutine compare_checksums_2D_r4
    
   !> Compare the checksums of 2 3D 32-bit real arrays
   subroutine compare_checksums_3D_r4( a, b, string )
@@ -121,6 +121,7 @@ contains
        call mpp_error( FATAL, trim(string)//': checksums do not match.' )
      end if
   end subroutine compare_checksums_3D_r4
+
   !> compare checksums of 2D 64-bit real arrays 
   subroutine compare_checksums_2D_r8( a, b, chk_str )
     real(kind=r8_kind), intent(in), dimension(:,:) :: a, b !< 2D arrays to compare
