@@ -1318,12 +1318,14 @@ end function rarray_to_char
     character(len=*), intent(in), optional :: pelist_name_in
 ! private variables
     integer :: log_unit
-    integer :: i
+    integer :: i, status
     integer, dimension(2) :: lines_and_length
-    logical :: file_exist
+    logical :: file_exist, alt_file_exist
     character(len=len(peset(current_peset_num)%name)) :: pelist_name
-    character(len=128) :: filename
+    character(len=128) :: filename, alt_input_nml_path
+    namelist /alt_input_nml/ alt_input_nml_path
 
+    alt_input_nml_path = ''
 ! check the status of input_nml_file
     if ( allocated(input_nml_file) ) then
       deallocate(input_nml_file)
@@ -1349,6 +1351,16 @@ end function rarray_to_char
     lines_and_length = get_ascii_file_num_lines_and_length(filename)
     allocate(character(len=lines_and_length(2))::input_nml_file(lines_and_length(1)))
     call read_ascii_file(filename, lines_and_length(2), input_nml_file)
+    read(input_nml_file, alt_input_nml, iostat=status)
+    inquire(FILE=alt_input_nml_path, EXIST=alt_file_exist)
+    if (.not. alt_file_exist ) then
+      call mpp_error(FATAL, "mpp_util.inc: alternate input nml file path does not exist")
+    else
+      lines_and_length = get_ascii_file_num_lines_and_length(alt_input_nml_path)
+      deallocate(input_nml_file)
+      allocate(character(len=lines_and_length(2))::input_nml_file(lines_and_length(1)))
+      call read_ascii_file(alt_input_nml_path, lines_and_length(2), input_nml_file)
+    end if
 
 ! write info logfile
     if (pe == root_pe) then
