@@ -135,15 +135,6 @@ module mpp_parameter_mod
   integer, parameter :: MAX_DOMAIN_FIELDS=100
   integer, parameter :: MAX_TILES=10
 
-  !--- The following paramters are used by mpp_io_mod and its components.
-  integer, parameter :: MPP_WRONLY=100, MPP_RDONLY=101, MPP_APPEND=102, MPP_OVERWR=103 !< action on open
-  integer, parameter :: MPP_ASCII=200,  MPP_IEEE32=201, MPP_NATIVE=202, MPP_NETCDF=203 !< format
-  integer, parameter :: MPP_SEQUENTIAL=300, MPP_DIRECT=301 !< access
-  integer, parameter :: MPP_SINGLE=400, MPP_MULTI=401      !< threading, fileset
-  integer, parameter :: MPP_DELETE=501, MPP_COLLECT=502    !< action on close
-  integer, parameter :: NULLUNIT=-1                        !< returned by PEs not participating in
-                                                           !! IO after collective call with threading
-                                                           !! equal to MPP_SINGLE
   !--- unique tag used in FMS
   integer, parameter :: COMM_TAG_1  = 1,  COMM_TAG_2  = 2,  COMM_TAG_3  = 3,  COMM_TAG_4  = 4
   integer, parameter :: COMM_TAG_5  = 5,  COMM_TAG_6  = 6,  COMM_TAG_7  = 7,  COMM_TAG_8  = 8

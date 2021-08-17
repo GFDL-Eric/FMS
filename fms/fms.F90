@@ -146,21 +146,6 @@ use  mpp_domains_mod, only:  domain2D, mpp_define_domains, &
                              mpp_get_compute_domain, mpp_get_global_domain, &
                              mpp_get_data_domain
 
-use       mpp_io_mod, only:  mpp_io_init, mpp_open, mpp_close,         &
-                       MPP_ASCII, MPP_NATIVE, MPP_IEEE32, MPP_NETCDF,  &
-                       MPP_RDONLY, MPP_WRONLY, MPP_APPEND, MPP_OVERWR, &
-                       MPP_SEQUENTIAL, MPP_DIRECT,                     &
-                       MPP_SINGLE, MPP_MULTI, MPP_DELETE, mpp_io_exit, &
-                       fieldtype, mpp_get_atts, mpp_get_info, mpp_get_fields, &
-                       do_cf_compliance
-
-use fms_io_mod, only : fms_io_init, fms_io_exit, field_size, &
-                       read_data, write_data, read_compressed, read_distributed, &
-                       open_namelist_file, open_restart_file, open_ieee32_file, close_file, &
-                       get_domain_decomp, &
-                       open_file, open_direct_file, get_mosaic_tile_grid, &
-                       get_mosaic_tile_file, get_global_att_value, file_exist, field_exist, &
-                       set_domain, nullify_domain
 use fms2_io_mod, only: fms2_io_init
 use memutils_mod, only: print_memuse_stats, memutils_init
 use grid2_mod, only: grid_init, grid_end
@@ -365,12 +350,6 @@ subroutine fms_init (localcomm, alt_input_nml_path)
        endif
     endif
     call mpp_domains_init()
-    call fms_io_init()
-    !! write_version_number is inaccesible from fms_io_mod so write it from here if not written
-    if(.not.fms_io_initialized) then
-      call write_version_number("FMS_IO_MOD", fms_io_version)
-      fms_io_initialized = .true.
-    endif
     call fms2_io_init()
     logunitnum = stdlog()
 !---- read namelist input ----
@@ -461,9 +440,7 @@ end subroutine fms_init
 subroutine fms_end ( )
 
     if (.not.module_is_initialized) return  ! return silently
-!    call fms_io_exit  ! now called from coupler_end
     call grid_end
-    call mpp_io_exit
     call mpp_domains_exit
     call mpp_exit
     module_is_initialized =.FALSE.

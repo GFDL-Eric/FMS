@@ -213,25 +213,6 @@ mpp_domains_mod.$(FC_MODEXT): \
   include/mpp_unstruct_domain.inc \
   include/mpp_global_field_ug.h \
   include/mpp_unstruct_pass_data.h
-mpp_io_mod.$(FC_MODEXT): \
-  mpp_parameter_mod.$(FC_MODEXT) \
-  mpp_mod.$(FC_MODEXT) \
-  mpp_domains_mod.$(FC_MODEXT) \
-  include/mpp_io_util.inc \
-  include/mpp_io_misc.inc \
-  include/mpp_io_connect.inc \
-  include/mpp_io_read.inc \
-  include/mpp_read_2Ddecomp.h \
-  include/mpp_read_compressed.h \
-  include/mpp_read_distributed_ascii.inc \
-  include/mpp_read_distributed_ascii.h \
-  include/mpp_io_write.inc \
-  include/mpp_write.h \
-  include/mpp_write_2Ddecomp.h \
-  include/mpp_write_compressed.h \
-  include/mpp_write_unlimited_axis.h \
-  include/mpp_io_unstructured_write.inc \
-  include/mpp_io_unstructured_read.inc
 mpp_efp_mod.$(FC_MODEXT): mpp_parameter_mod.$(FC_MODEXT) mpp_mod.$(FC_MODEXT)
 mpp_memutils_mod.$(FC_MODEXT): mpp_mod.$(FC_MODEXT)
 mpp_pset_mod.$(FC_MODEXT): mpp_mod.$(FC_MODEXT)
@@ -245,7 +226,6 @@ BUILT_SOURCES = \
   mpp_memutils_mod.$(FC_MODEXT) \
   mpp_efp_mod.$(FC_MODEXT) \
   mpp_domains_mod.$(FC_MODEXT) \
-  mpp_io_mod.$(FC_MODEXT) \
   mpp_pset_mod.$(FC_MODEXT)
 nodist_include_HEADERS = $(BUILT_SOURCES)
 
