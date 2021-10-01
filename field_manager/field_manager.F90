@@ -915,7 +915,7 @@ if (associated(list_p%s_value)) deallocate(list_p%s_value)
 !
 if (parent_p%length .le. 0) then
   parent_p%first_field => list_p
-else{
+else
   parent_p%last_field%next => list_p
 endif
 !
@@ -1111,7 +1111,7 @@ if (length .eq. 0) then
    !
    path = ' '
    base = ' '
-else{
+else
    !
    !       Remove trailing list separators
    !
@@ -1128,7 +1128,7 @@ else{
       !
       path = ' '
       base = ' '
-   else{
+   else
       !
       !       Check for the last occurrence of the list separator in name
       !
@@ -1140,7 +1140,7 @@ else{
          !
          path = ' '
          base = name(1:length)
-      else{
+      else
          !
          !       Found a list separator, so return the part up to the last
          !       list separator in path, and the remainder in base
@@ -1185,12 +1185,12 @@ if (name .eq. '.') then
 !        If the field is '.' then return this list
 !
   field_p => this_list_p
-elseif (name .eq. '..') then{
+elseif (name .eq. '..') then
 !
 !        If the field is '..' then return the parent list
 !
   field_p => this_list_p%parent
-else{
+else
 !
 !        Loop over each field in this list
 !
@@ -1244,7 +1244,7 @@ i = index(name, list_sep)
 do while (i .le. len(name))
   if (name(i+1:i+1) .eq. list_sep) then
     i = i + 1
-  else{
+  else
     exit
   endif
 enddo
@@ -1256,14 +1256,14 @@ if (i .eq. 0) then
 !
   head = ' '
   rest = name
-elseif (i .eq. len(name)) then{
+elseif (i .eq. len(name)) then
 !
 !        The last character in name is a list separator, so return name
 !        as head and an empty rest
 !
   head = name
   rest = ' '
-else{
+else
 !
 !        Found a list separator, so return the part up to the list
 !        separator in head, and the remainder in rest
@@ -1321,7 +1321,7 @@ if (path .eq. ' ') then
 
   list_p => relative_p
 
-else{
+else
 !
 !        If a fully qualified path is given (i.e., starts with the
 !        list separator) then do everything relative to root,
@@ -1330,7 +1330,7 @@ else{
   if (path(1:1) .eq. list_sep) then
     working_path_p => root_p
     working_path = path(2:)
-  else{
+  else
     working_path_p => relative_p
     working_path = path
   endif
@@ -1373,7 +1373,7 @@ else{
           nullify(list_p)
           return
         endif
-      else{
+      else
 !
 !        Otherwise, return an error
 !
@@ -1389,7 +1389,7 @@ else{
     if (this_list_p%field_type .eq. list_type) then
       working_path_p => this_list_p
       working_path = rest
-    else{
+    else
       nullify(list_p)
       return
     endif
@@ -1432,7 +1432,7 @@ temp_p => find_list(name, current_list_p, .false.)
 if (associated(temp_p)) then
   current_list_p => temp_p
   success = .true.
-else{
+else
   success = .false.
 endif
 
@@ -1516,7 +1516,7 @@ if (associated(temp_list_p)) then
 !
   current_list_p => root_p
   success = .true.
-else{
+else
 !
 !        Couldn't find the list
 !
@@ -1661,7 +1661,7 @@ if (associated(temp_field_p)) then
 !        Set the index
 !
   index = temp_field_p%index
-else{
+else
 !
 !        Error following the path
 !
@@ -1723,7 +1723,7 @@ if (.not. associated(temp_list_p)) then
 !        occurred, so set the path accordingly
 !
   path = ' '
-elseif (path .eq. ' ') then{
+elseif (path .eq. ' ') then
 !
 !        If path is empty, then the current list must be root,
 !        so set path accordingly
@@ -1784,10 +1784,10 @@ if (associated(temp_field_p)) then
 !
   if (temp_field_p%field_type .eq. list_type) then
     length = temp_field_p%length
-  else{
+  else
     length = temp_field_p%max_index
   endif
-else{
+else
 !
 !        Error following the path
 !
@@ -1848,7 +1848,7 @@ if (associated(temp_field_p)) then
 !        Set the field type
 !
   name_field_type = field_type_name(temp_field_p%field_type)
-else{
+else
 !
 !        Error following the path
 !
@@ -1903,7 +1903,7 @@ endif
 !
 if (present(index)) then
   index_t = index
-else{
+else
   index_t = 1
 endif
 !
@@ -1923,21 +1923,21 @@ if (associated(temp_field_p)) then
 
       value = 0
       success = .false.
-    elseif (index_t .gt. temp_field_p%max_index) then{
+    elseif (index_t .gt. temp_field_p%max_index) then
 !
 !        Index is too large
 !
 
       value = 0
       success = .false.
-    else{
+    else
 !
 !        extract the value
 !
       value = temp_field_p%i_value(index_t)
       success = .true.
     endif
-  else{
+  else
 !
 !        Field not corrcet type
 !
@@ -1945,7 +1945,7 @@ if (associated(temp_field_p)) then
     value = 0
     success = .false.
   endif
-else{
+else
 !
 !        Error following the path
 !
@@ -2001,7 +2001,7 @@ endif
 !
 if (present(index)) then
   index_t = index
-else{
+else
   index_t = 1
 endif
 !
@@ -2023,7 +2023,7 @@ if (associated(temp_field_p)) then
       value = .false.
       success = .false.
 
-    elseif (index_t .gt. temp_field_p%max_index) then{
+    elseif (index_t .gt. temp_field_p%max_index) then
 !
 !        Index is too large
 !
@@ -2031,14 +2031,14 @@ if (associated(temp_field_p)) then
       value = .false.
       success = .false.
 
-    else{
+    else
 !
 !        extract the value
 !
       value = temp_field_p%l_value(index_t)
       success = .true.
     endif
-  else{
+  else
 !
 !        Field not correct type
 !
@@ -2046,7 +2046,7 @@ if (associated(temp_field_p)) then
     value = .false.
     success = .false.
   endif
-else{
+else
 !
 !        Error following the path
 !
@@ -2102,7 +2102,7 @@ endif
 !
 if (present(index)) then
   index_t = index
-else{
+else
   index_t = 1
 endif
 !
@@ -2125,7 +2125,7 @@ if (associated(temp_field_p)) then
       value = 0.0
       success = .false.
 
-    elseif (index_t .gt. temp_field_p%max_index) then{
+    elseif (index_t .gt. temp_field_p%max_index) then
 
 !
 !        Index is too large
@@ -2134,7 +2134,7 @@ if (associated(temp_field_p)) then
       value = 0.0
       success = .false.
 
-    else{
+    else
 
 !
 !        extract the value
@@ -2142,7 +2142,7 @@ if (associated(temp_field_p)) then
       value = temp_field_p%r_value(index_t)
       success = .true.
     endif
-  else{
+  else
 !
 !        Field not correct type
 !
@@ -2150,7 +2150,7 @@ if (associated(temp_field_p)) then
     value = 0.0
     success = .false.
   endif
-else{
+else
 !
 !        Error following the path
 !
@@ -2206,7 +2206,7 @@ endif
 !
 if (present(index)) then
   index_t = index
-else{
+else
   index_t = 1
 endif
 !
@@ -2227,14 +2227,14 @@ if (associated(temp_field_p)) then
       value = ''
       success = .false.
 
-    elseif (index_t .gt. temp_field_p%max_index) then{
+    elseif (index_t .gt. temp_field_p%max_index) then
 !
 !        Index is too large
 !
 
       value = ''
       success = .false.
-    else{
+    else
 !
 !        extract the value
 !
@@ -2245,7 +2245,7 @@ if (associated(temp_field_p)) then
         success = .true.
       !endif
     endif
-  else{
+  else
 !
 !        Field not correct type
 !
@@ -2253,7 +2253,7 @@ if (associated(temp_field_p)) then
     value = ''
     success = .false.
   endif
-else{
+else
 !
 !        Error following the path
 !
@@ -2334,13 +2334,13 @@ do n = 1, dim
     if (count .eq. -1) then
       count = temp_p%length
       shortest = n
-    else{
+    else
       if (count .gt. temp_p%length) then
         count = temp_p%length
         shortest = n
       endif
     endif
-  else{
+  else
     nullify(return_p)
     return
   endif
@@ -2485,7 +2485,7 @@ elseif (list .eq. ' ') then
   loop_list = ' '
   loop_list_p => current_list_p%first_field
   success = set_list_stuff()
-else{
+else
 !
 !        Get a pointer to the list
 !
@@ -2494,7 +2494,7 @@ else{
   if (associated(loop_list_p)) then
     loop_list_p => loop_list_p%first_field
     success = set_list_stuff()
-  else{
+  else
 !
 !        Error following the path
 !
@@ -2528,7 +2528,7 @@ function  set_list_stuff()                                                &
     field_type = field_type_name(loop_list_p%field_type)
     index = loop_list_p%index
     success = .true.
-  else{
+  else
     name = ' '
     field_type = ' '
     index = 0
@@ -2633,13 +2633,13 @@ endif
 !
 if (present(create)) then
   create_t = create
-else{
+else
   create_t = .false.
 endif
 
 if (present(keep)) then
   keep_t = keep
-else{
+else
   keep_t = .false.
 endif
 !
@@ -2662,7 +2662,7 @@ if (associated(temp_list_p)) then
       current_list_p => temp_list_p
     endif
     index = temp_list_p%index
-  else{
+  else
 !
 !        Error in making the list
 !
@@ -2670,7 +2670,7 @@ if (associated(temp_list_p)) then
     index = NO_FIELD
 
   endif
-else{
+else
 !
 !        Error following the path
 !
@@ -2738,7 +2738,7 @@ endif
 !
 if (present(create)) then
   create_t = create
-else{
+else
   create_t = .false.
 endif
 !
@@ -2764,7 +2764,7 @@ if (present(index)) then
     field_index = NO_FIELD
     return
   endif
-else{
+else
   index_t = 1
 endif
 !
@@ -2819,7 +2819,7 @@ if (associated(temp_list_p)) then
       return
 
     elseif (index_t .eq. 0 .and.                                &
-            temp_field_p%max_index .gt. 0) then{
+            temp_field_p%max_index .gt. 0) then
 !
 !        Can't set non-null field to null
 !
@@ -2828,14 +2828,14 @@ if (associated(temp_list_p)) then
       return
 
     elseif (.not. associated(temp_field_p%i_value) .and.        &
-            index_t .gt. 0) then{
+            index_t .gt. 0) then
 !
 !        Array undefined, so allocate the array
 !
       allocate(temp_field_p%i_value(1))
       temp_field_p%max_index = 1
       temp_field_p%array_dim = 1
-    elseif (index_t .gt. temp_field_p%array_dim) then{
+    elseif (index_t .gt. temp_field_p%array_dim) then
 !
 !        Array is too small, so allocate new array and copy over
 !        old values
@@ -2861,14 +2861,14 @@ if (associated(temp_list_p)) then
     endif
     field_index = temp_field_p%index
 
-  else{
+  else
 !
 !        Error in making the field
 !
 
     field_index = NO_FIELD
   endif
-else{
+else
 !
 !        Error following the path
 !
@@ -2935,7 +2935,7 @@ endif
 !
 if (present(create)) then
   create_t = create
-else{
+else
   create_t = .false.
 endif
 !
@@ -2961,7 +2961,7 @@ if (present(index)) then
     field_index = NO_FIELD
     return
   endif
-else{
+else
   index_t = 1
 endif
 !
@@ -3010,7 +3010,7 @@ if (associated(temp_list_p)) then
       return
 
     elseif (index_t .eq. 0 .and.                                &
-            temp_field_p%max_index .gt. 0) then{
+            temp_field_p%max_index .gt. 0) then
 
 !
 !        Can't set non-null field to null
@@ -3020,7 +3020,7 @@ if (associated(temp_list_p)) then
       return
 
     elseif (.not. associated(temp_field_p%l_value) .and.        &
-            index_t .gt. 0) then{
+            index_t .gt. 0) then
 
 !
 !        Array undefined, so allocate the array
@@ -3030,7 +3030,7 @@ if (associated(temp_list_p)) then
       temp_field_p%max_index = 1
       temp_field_p%array_dim = 1
 
-    elseif (index_t .gt. temp_field_p%array_dim) then{
+    elseif (index_t .gt. temp_field_p%array_dim) then
 
 !
 !        Array is too small, so allocate new array and copy over
@@ -3059,14 +3059,14 @@ if (associated(temp_list_p)) then
       endif
     endif
     field_index = temp_field_p%index
-  else{
+  else
 !
 !        Error in making the field
 !
 
     field_index = NO_FIELD
   endif
-else{
+else
 !
 !        Error following the path
 !
@@ -3134,7 +3134,7 @@ endif
 !
 if (present(create)) then
   create_t = create
-else{
+else
   create_t = .false.
 endif
 !
@@ -3160,7 +3160,7 @@ if (present(index)) then
     field_index = NO_FIELD
     return
   endif
-else{
+else
   index_t = 1
 endif
 
@@ -3218,7 +3218,7 @@ if (associated(temp_list_p)) then
       field_index = NO_FIELD
       return
     elseif (index_t .eq. 0 .and.                                &
-            temp_field_p%max_index .gt. 0) then{
+            temp_field_p%max_index .gt. 0) then
 !
 !        Can't set non-null field to null
 !
@@ -3226,14 +3226,14 @@ if (associated(temp_list_p)) then
       field_index = NO_FIELD
       return
     elseif (.not. associated(temp_field_p%r_value) .and.        &
-            index_t .gt. 0) then{
+            index_t .gt. 0) then
 !
 !        Array undefined, so allocate the array
 !
       allocate(temp_field_p%r_value(1))
       temp_field_p%max_index = 1
       temp_field_p%array_dim = 1
-    elseif (index_t .gt. temp_field_p%array_dim) then{
+    elseif (index_t .gt. temp_field_p%array_dim) then
 !
 !        Array is too small, so allocate new array and copy over
 !        old values
@@ -3258,14 +3258,14 @@ if (associated(temp_list_p)) then
       endif
     endif
     field_index = temp_field_p%index
-  else{
+  else
 !
 !        Error in making the field
 !
 
     field_index = NO_FIELD
   endif
-else{
+else
 !
 !        Error following the path
 !
@@ -3332,7 +3332,7 @@ endif
 !
 if (present(create)) then
   create_t = create
-else{
+else
   create_t = .false.
 endif
 !
@@ -3358,7 +3358,7 @@ if (present(index)) then
     field_index = NO_FIELD
     return
   endif
-else{
+else
   index_t = 1
 endif
 
@@ -3408,7 +3408,7 @@ if (associated(temp_list_p)) then
       return
 
     elseif (index_t .eq. 0 .and.                                &
-            temp_field_p%max_index .gt. 0) then{
+            temp_field_p%max_index .gt. 0) then
 
 !
 !        Can't set non-null field to null
@@ -3418,7 +3418,7 @@ if (associated(temp_list_p)) then
       return
 
     elseif (.not. associated(temp_field_p%s_value) .and.        &
-            index_t .gt. 0) then{
+            index_t .gt. 0) then
 
 !
 !        Array undefined, so allocate the array
@@ -3428,7 +3428,7 @@ if (associated(temp_list_p)) then
       temp_field_p%max_index = 1
       temp_field_p%array_dim = 1
 
-    elseif (index_t .gt. temp_field_p%array_dim) then{
+    elseif (index_t .gt. temp_field_p%array_dim) then
 
 !
 !        Array is too small, so allocate new array and copy over
@@ -3457,14 +3457,14 @@ if (associated(temp_list_p)) then
       endif
     endif
     field_index = temp_field_p%index
-  else{
+  else
 !
 !        Error in making the field
 !
 
     field_index = NO_FIELD
   endif
-else{
+else
 !
 !        Error following the path
 !
@@ -3571,10 +3571,10 @@ if (path .ne. ' ') then
   temp_p => find_list(path, this_list_p, .false.)
   if (associated(temp_p)) then
     list_p => find_field(base, temp_p)
-  else{
+  else
     nullify(list_p)
   endif
-else{
+else
   list_p => find_field(base, this_list_p)
 endif
 
@@ -3620,10 +3620,10 @@ if (path .ne. ' ') then
       list_p%name = newname
       success = .true.
     endif
-  else{
+  else
     nullify(list_p)
   endif
-else{
+else
   list_p => find_field(base, current_list_p)
   if (associated(list_p)) then
     list_p%name = newname
@@ -3801,7 +3801,7 @@ call find_base(name_loc, path, base)
 if (associated(temp_list_p)) then
 ! Find the entry values for the list.
   success = query_method(temp_list_p, recursive_t, base, method_name, method_control)
-else{
+else
 ! This is not a list but it may be a parameter with a value
 ! If so put the parameter value in method_name.
 
@@ -3816,13 +3816,13 @@ else{
       method_control = ""
       success = .true.
       exit
-    else{
+    else
       success = .false.
     endif
     this_field_p => this_field_p%next
   enddo
 
-  else{
+  else
 !
 !        Error following the path
 !
@@ -4001,14 +4001,14 @@ if (list_name .eq. ' ') then
 !
   temp_list_p => current_list_p
   success = .true.
-else{
+else
 !
 !        Get a pointer to the list
 !
   temp_list_p => find_list(list_name, current_list_p, .false.)
   if (associated(temp_list_p)) then
     success = .true.
-  else{
+  else
 !
 !        Error following the path
 !
@@ -4116,14 +4116,14 @@ if (list_name .eq. ' ') then
 !
   temp_list_p => current_list_p
   success = .true.
-else{
+else
 !
 !        Get a pointer to the list
 !
   temp_list_p => find_list(list_name, current_list_p, .false.)
   if (associated(temp_list_p)) then
     success = .true.
-  else{
+  else
 !
 !        Error following the path
 !
@@ -4179,9 +4179,9 @@ out_unit = stdout()
 !
 if (.not. associated(list_p)) then
   success = .false.
-elseif (list_p%field_type .ne. list_type) then{
+elseif (list_p%field_type .ne. list_type) then
   success = .false.
-else{
+else
 !
 !        set the default return value
 !
