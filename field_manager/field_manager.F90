@@ -262,7 +262,7 @@ private :: find_field          ! (field, list_p) return field pointer
 private :: find_head           ! (field, head, rest)
 private :: find_list           ! (list, list_p, create) return field pointer
 private :: get_field           ! (field, list_p) return field pointer
-private :: initialize          ! ()
+private :: reset_field_tree    ! ()
 private :: make_list           ! (list_p, name) return field pointer
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -577,474 +577,23 @@ contains
 
 !> @brief Routine to initialize the field manager.
 !!
-!> This routine reads from a file containing formatted strings.
-!! These formatted strings contain information on which schemes are
+!> This routine reads the fields from a yaml file containing key value pairs.
+!! These potentially nested key value pairs contain information on which schemes are
 !! needed within various modules. The field manager does not
 !! initialize any of those schemes however. It simply holds the
 !! information and is queried by the appropriate  module.
-subroutine field_manager_init(nfields, table_name)
-
-integer,                      intent(out), optional :: nfields !< number of fields
-character(len=fm_string_len), intent(in), optional :: table_name !< Name of the field table, default
-                                                                 !! is 'field_table'
-
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=18), parameter :: sub_name     = 'field_manager_init'
-character(len=64), parameter :: error_header = '==>Error from ' // trim(module_name)   //  &
-                                               '(' // trim(sub_name) // '): '
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-character(len=64), parameter :: note_header  = '==>Note from ' // trim(module_name)    //  &
-                                               '(' // trim(sub_name) // '): '
-
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=1024)              :: record
-character(len=fm_path_name_len)  :: control_str
-character(len=fm_path_name_len)  :: list_name
-character(len=fm_path_name_len)  :: method_name
-character(len=fm_path_name_len)  :: name_str
-character(len=fm_path_name_len)  :: type_str
-character(len=fm_path_name_len)  :: val_name
-character(len=fm_string_len)     :: tbl_name
-integer                          :: control_array(MAX_FIELDS,3)
-integer                          :: endcont
-integer                          :: icount
-integer                          :: index_list_name
-integer                          :: iunit
-integer                          :: l
-integer                          :: log_unit
-integer                          :: ltrec
-integer                          :: m
-integer                          :: midcont
-integer                          :: model
-integer                          :: startcont
-integer                          :: io_status
-logical                          :: flag_method
-logical                          :: fm_success
-type(field_names_type_short)     :: text_names_short
-type(field_names_type)           :: text_names
-type(method_type_short)          :: text_method_short
-type(method_type)                :: text_method
-type(method_type_very_short)     :: text_method_very_short
-
-
+subroutine field_manager_init()
 
 if (module_is_initialized) then
-   if(present(nfields)) nfields = num_fields
    return
 endif
 
-#ifdef PRESERVE_UNIT_CASE
-! <ERROR MSG="Preserving the unit's case is experimental." STATUS="NOTE">
-!   The case of the units in the field_table is preserved.  This option is
-!   still experimental.  It is possible other model components expect the units
-!   to be lowercase.  Please notify the developers if any issues are discovered.
-! </ERROR>
-call mpp_error(NOTE,trim(note_header)//"Preserving the unit's case is experimental.")
-#endif
+call reset_field_tree
+call get_fields_from_yaml
 
-num_fields = 0
-call initialize
-
-if (.not.PRESENT(table_name)) then
-   tbl_name = 'field_table'
-else
-   tbl_name = trim(table_name)
-endif
-if (.not. file_exists(trim(tbl_name))) then
-!   <ERROR MSG="No field table available, so no fields are being registered." STATUS="NOTE">
-!      The field table does not exist.
-!   </ERROR>
-  if (mpp_pe() == mpp_root_pe()) then
-    if (verb .gt. verb_level_warn) then
-      call mpp_error(NOTE, trim(warn_header)//                       &
-         'No field table ('//trim(tbl_name)//') available, so no fields are being registered.')
-    endif
-  endif
-if(present(nfields)) nfields = 0
-  return
-endif
-
-open(newunit=iunit, file=trim(tbl_name), action='READ', iostat=io_status)
-if(io_status/=0) call mpp_error(FATAL, 'field_manager_mod: Error in opening file '//trim(tbl_name))
-!write_version_number should precede all writes to stdlog from field_manager
-call write_version_number("FIELD_MANAGER_MOD", version)
-log_unit = stdlog()
-do while (.TRUE.)
-   read(iunit,'(a)',end=89,err=99) record
-   write( log_unit,'(a)' )record
-   if (record(1:1) == "#" ) cycle
-   ltrec =  LEN_TRIM(record)
-   if (ltrec .le. 0 ) cycle ! Blank line
-
-
-         icount = 0
-         do l= 1, ltrec
-            if (record(l:l) == '"' ) then
-               icount = icount + 1
-            endif
-         enddo
-!     <ERROR MSG="Too many fields in field table header entry." STATUS="FATAL">
-!       There are more that 3 fields in the field table header entry.
-!       The entry should look like <BR/>
-!       "Field_Type","Model_Type","Field_Name" <BR/>
-!        or<BR/>
-!       "Field_Type","Model_Type"
-!     </ERROR>
-      if (icount > 6 ) then
-        call mpp_error(FATAL,trim(error_header)//'Too many fields in field table header entry.'//trim(record))
-      endif
-
-         select case (icount)
-           case (6)
-             read(record,*,end=79,err=79) text_names
-             text_names%fld_type = lowercase(trim(text_names%fld_type))
-             text_names%mod_name = lowercase(trim(text_names%mod_name))
-             text_names%fld_name = lowercase(trim(text_names%fld_name))
-           case(4)
-! If there is no control string then the last string can be omitted and there are only 4 '"' in the record.
-             read(record,*,end=79,err=79) text_names_short
-             text_names%fld_type = lowercase(trim(text_names_short%fld_type))
-             text_names%mod_name = lowercase(trim(text_names_short%mod_name))
-             text_names%fld_name = lowercase(trim(text_names_short%mod_name))
-           case(2)
-! If there is only the method_type string then the last 2 strings need to be blank and there are only 2 '"' in the record.
-             read(record,*,end=79,err=79) text_names_short
-             text_names%fld_type = lowercase(trim(text_names_short%fld_type))
-             text_names%mod_name = lowercase(trim(text_names_short%mod_name))
-             text_names%fld_name = lowercase(trim(text_names_short%mod_name))
-           case default
-!     <ERROR MSG="Unterminated field in field table header entry." STATUS="FATAL">
-!       There is an unterminated or unquoted string in the field table entry.
-             text_names%fld_type = " "
-             text_names%mod_name = lowercase(trim(record))
-             text_names%fld_name = " "
-!             call mpp_error(FATAL,trim(error_header)//'Unterminated field in field_table header entry.'//trim(record))
-!     </ERROR>
-         end select
-
-! Create a list with Rick Slaters field manager code
-
-   list_name = list_sep//trim(text_names%mod_name)//list_sep//trim(text_names%fld_type)//&
-               list_sep//trim(text_names%fld_name)
-   if (mpp_pe() == mpp_root_pe() ) then
-     if (verb .gt. verb_level_note) then
-!   <ERROR MSG="Creating list name = list_name." STATUS="NOTE">
-!      A field is being created called list_name.
-!   </ERROR>
-       call mpp_error(NOTE, trim(note_header)//'Creating list name = '//trim(list_name))
-     endif
-   endif
-
-   index_list_name = fm_new_list(list_name, create = .true.)
-!   <ERROR MSG="Could not set field list for list_name." STATUS="FATAL">
-!      A field called list_name could not be created.
-!   </ERROR>
-   if ( index_list_name == NO_FIELD ) &
-     call mpp_error(FATAL, trim(error_header)//'Could not set field list for '//trim(list_name))
-
-   fm_success = fm_change_list(list_name)
-   select case (text_names%mod_name)
-   case ('coupler_mod')
-      model = MODEL_COUPLER
-   case ('atmos_mod')
-      model = MODEL_ATMOS
-   case ('ocean_mod')
-      model = MODEL_OCEAN
-   case ('land_mod')
-      model = MODEL_LAND
-   case ('ice_mod')
-      model = MODEL_ICE
-   case default
-!   <ERROR MSG="The model name is unrecognised : model_name" STATUS="FATAL">
-!      The model name being supplied in the field entry is unrecognised.
-!      This should be the second string in the first line of the field entry.
-!      Recognised names are atmos_mod, ice_mod, land_mod and ocean_mod.
-!   </ERROR>
-     call mpp_error(FATAL, trim(error_header)//'The model name is unrecognised : '//trim(text_names%mod_name))
-   end select
-   if (find_field_index(list_name) > 0) then
-      num_fields = num_fields + 1
-
-
-!     <ERROR MSG="max fields exceeded" STATUS="FATAL">
-!       Maximum number of fields for this module has been exceeded.
-!     </ERROR>
-      if (num_fields > MAX_FIELDS) call mpp_error(FATAL,trim(error_header)//'max fields exceeded')
-      fields(num_fields)%model       = model
-      fields(num_fields)%field_name  = lowercase(trim(text_names%fld_name))
-      fields(num_fields)%field_type  = lowercase(trim(text_names%fld_type))
-      fields(num_fields)%num_methods = 0
-      call check_for_name_duplication
-
-! Check to see that the first line is not the only line
-      if ( record(LEN_TRIM(record):LEN_TRIM(record)) == list_sep) cycle
-
-      flag_method = .TRUE.
-      m = 1
-      do while (flag_method)
-         read(iunit,'(a)',end=99,err=99) record
-! If the line is blank then fetch the next line.
-         if (LEN_TRIM(record) .le. 0) cycle
-! If the last character in the line is / then this is the end of the field methods
-         if ( record(LEN_TRIM(record):LEN_TRIM(record)) == list_sep) then
-            flag_method = .FALSE.
-            if (LEN_TRIM(record) == 1) cycle
-            record = record(:LEN_TRIM(record)-1) ! Remove the end of field method marker
-         endif
-! If the line is now blank, after removing the field separator marker, then fetch the next line.
-         if (LEN_TRIM(record) .le. 0) cycle
-! If the first character in the line is # then it is treated as a comment
-         if (record(1:1) == comment ) cycle
-
-         icount = 0
-         do l= 1, LEN_TRIM(record)
-            if (record(l:l) == dquote ) then
-               icount = icount + 1
-            endif
-         enddo
-!     <ERROR MSG="Too many fields in field entry." STATUS="FATAL">
-!       There are more that 3 fields in the tracer entry. This is probably due
-!       to separating the parameters entry into multiple strings.
-!       The entry should look like <BR/>
-!       "Type","Name","Control1=XXX,Control2=YYY" <BR/>
-!        and not like<BR/>
-!       "Type","Name","Control1=XXX","Control2=YYY"
-!     </ERROR>
-      if (icount > 6 ) call mpp_error(FATAL,trim(error_header)//'Too many fields in field entry.'//trim(record))
-
-      if (.not. fm_change_list ( list_name)) &
-         call mpp_error(FATAL, trim(error_header)//'Could not change to '//trim(list_name)//' list')
-
-      select case (icount)
-        case (6)
-          read(record,*,end=99,err=99) text_method
-          fields(num_fields)%methods(m)%method_type = lowercase(trim(text_method%method_type))
-          fields(num_fields)%methods(m)%method_name = lowercase(trim(text_method%method_name))
-          fields(num_fields)%methods(m)%method_control = lowercase(trim(text_method%method_control))
-
-          type_str    = text_method%method_type
-          name_str    = text_method%method_name
-          control_str = text_method%method_control
-
-        case(4)
-! If there is no control string then the last string can be omitted and there are only 4 '"' in the record.
-          read(record,*,end=99,err=99) text_method_short
-          fields(num_fields)%methods(m)%method_type =&
-               & lowercase(trim(text_method_short%method_type))
-#ifdef PRESERVE_UNIT_CASE
-
-          if ( trim(fields(num_fields)%methods(m)%method_type) == 'units' ) then
-             ! Do not lowercase if units
-             fields(num_fields)%methods(m)%method_name =&
-                  & trim(text_method_short%method_name)
-          else
-             fields(num_fields)%methods(m)%method_name =&
-                  & lowercase(trim(text_method_short%method_name))
-          end if
-#else
-          fields(num_fields)%methods(m)%method_name =&
-               & lowercase(trim(text_method_short%method_name))
-#endif
-          fields(num_fields)%methods(m)%method_control = " "
-
-          type_str    = text_method_short%method_type
-          name_str    = ""
-          control_str = text_method_short%method_name
-
-        case(2)
-! If there is only the method_type string then the last 2 strings need to be blank and there are only 2 '"' in the record.
-          read(record,*,end=99,err=99) text_method_very_short
-          fields(num_fields)%methods(m)%method_type = lowercase(trim(text_method_very_short%method_type))
-          fields(num_fields)%methods(m)%method_name = " "
-          fields(num_fields)%methods(m)%method_control = " "
-
-          type_str    = ""
-          name_str    = ""
-          control_str = text_method_very_short%method_type
-
-        case(0)
-          read(record,'(A)',end=99,err=99) control_str
-          type_str = ""
-          name_str = ""
-
-        case default
-!     <ERROR MSG="Unterminated field in field entry." STATUS="FATAL">
-!       There is an unterminated or unquoted string in the field table entry.
-          call mpp_error(FATAL,trim(error_header)//'Unterminated field in field entry.'//trim(record))
-!     </ERROR>
-      end select
-
-! This section of code breaks the control string into separate strings.
-! The array control_array contains the following parameters.
-! control_array(:,1) = index within control_str of the first character of the name.
-! control_array(:,2) = index within control_str of the equal sign
-! control_array(:,3) = index within control_str of the last character of the value.
-!
-! control_array(:,1)   -> control_array(:,2) -1 = name of the parameter.
-! control_array(:,2)+1 -> control_array(:,3)    = value of the parameter.
-
-      ltrec= len_trim(control_str)
-      control_array(:,1) = 1
-      control_array(:,2:3) = ltrec
-      icount = 0
-      do l= 1, ltrec
-         if (control_str(l:l) == equal ) then
-            icount = icount + 1
-            control_array(icount,2) = l ! Middle of string
-         elseif (control_str(l:l) == comma ) then
-            if (icount .eq. 0) then
-
-!     <ERROR MSG="Unterminated field in field entry." STATUS="FATAL">
-!       Bad format for field entry (comma without equals sign)
-              call mpp_error(FATAL,trim(error_header) //                                &
-                   ' Bad format for field entry (comma without equals sign): ''' //     &
-                   trim(control_str) // '''')
-!     </ERROR>
-
-            elseif (icount .gt. MAX_FIELDS) then
-
-!     <ERROR MSG="Unterminated field in field entry." STATUS="FATAL">
-!       Too many fields in field entry
-              call mpp_error(FATAL,trim(error_header) //        &
-                   ' Too many fields in field entry: ''' //     &
-                   trim(control_str) // '''')
-!     </ERROR>
-
-            else
-
-              control_array(icount,3) = l-1   !End of previous string
-              control_array(min(MAX_FIELDS,icount+1),1) = l+1 !Start of next string
-
-            endif
-         endif
-      enddo
-
-      ! Make sure that we point to the end of the string (minus any trailing comma)
-      ! for the last set of values. This fixes the case where the last set of values
-      ! is a comma separated list
-
-      if (control_str(ltrec:ltrec) .ne. comma) then
-        control_array(max(1,icount),3) = ltrec
-      endif
-
-
-      if ( icount == 0 ) then
-        method_name = type_str
-        if (len_trim(method_name) > 0 ) then
-          method_name = trim(method_name)//list_sep// trim(name_str)
-        else
-          method_name = trim(name_str)
-        endif
-        val_name = control_str
-
-        call new_name(list_name, method_name, val_name )
-
-      else
-
-        do l = 1,icount
-          startcont = control_array(l,1)
-          midcont   = control_array(l,2)
-          endcont   = control_array(l,3)
-
-          method_name = trim(type_str)
-          if (len_trim(method_name) > 0 ) then
-            method_name = trim(method_name)//list_sep// trim(name_str)
-          else
-            method_name = trim(name_str)
-          endif
-
-          if (len_trim(method_name) > 0 ) then
-            method_name = trim(method_name)//list_sep//&
-                          trim(control_str(startcont:midcont-1))
-          else
-            method_name = trim(control_str(startcont:midcont-1))
-          endif
-          val_name =    trim(control_str(midcont+1:endcont))
-
-          call new_name(list_name, method_name, val_name )
-        enddo
-
-      endif
-
-      fields(num_fields)%num_methods = fields(num_fields)%num_methods + 1
-!     <ERROR MSG="Maximum number of methods for field exceeded" STATUS="FATAL">
-!       Maximum number of methods allowed for entries in the field table has been exceeded.
-!     </ERROR>
-      if (fields(num_fields)%num_methods > MAX_FIELD_METHODS) &
-         call mpp_error(FATAL,trim(error_header)//'Maximum number of methods for field exceeded')
-         m = m + 1
-      enddo
-   else
-
-!     <ERROR MSG="Field with identical name and model name duplicate found, skipping" STATUS="NOTE">
-!       The name of the field and the model name are identical. Skipping that field.
-!     </ERROR>
-      if (mpp_pe() == 0) then
-         if (verb .gt. verb_level_warn) then
-           call mpp_error(WARNING, trim(warn_header)//                              &
-                'Field with identical name and model name duplicate found, skipping')
-          endif
-      endif
-      flag_method = .TRUE.
-      do while (flag_method)
-         read(iunit,'(A)',end=99,err=99) record
-         if ( record(LEN_TRIM(record):LEN_TRIM(record)) == list_sep) then
-            flag_method = .FALSE.
-         endif
-      enddo
-   endif
-79 continue
-enddo
-
-89 continue
-close(iunit, iostat=io_status)
-if(io_status/=0) call mpp_error(FATAL, 'field_manager_mod: Error in closing file '//trim(tbl_name))
-
-
-if(present(nfields)) nfields = num_fields
-if (verb .gt. verb_level_warn) &
-  fm_success= fm_dump_list("/", .true.)
-
-default_method%method_type = 'none'
-default_method%method_name = 'none'
-default_method%method_control = 'none'
-return
-
-99 continue
-
-!     <ERROR MSG="error reading field table" STATUS="FATAL">
-!       There is an error in reading the field table.
-!     </ERROR>
-call mpp_error(FATAL,trim(error_header)//' Error reading field table. Record = '//trim(record))
+module_is_initialized = .true.
 
 end subroutine field_manager_init
-! </SUBROUTINE>
-
-subroutine check_for_name_duplication
-integer :: i
-
-! Check that name is unique amoung fields of the same field_type and model.
-do i=1,num_fields-1
-  if ( fields(i)%field_type == fields(num_fields)%field_type .and. &
-       fields(i)%model      == fields(num_fields)%model      .and. &
-       fields(i)%field_name == fields(num_fields)%field_name ) then
-    if (mpp_pe() .eq. mpp_root_pe()) then
-      call mpp_error(WARNING,'Error in field_manager_mod. Duplicate field name: Field type='//trim(fields(i)%field_type)// &
-         ',  Model='//trim(MODEL_NAMES(fields(i)%model))// &
-         ',  Duplicated name='//trim(fields(i)%field_name))
-    endif
-  endif
-enddo
-
-end subroutine check_for_name_duplication
-
-!#######################################################################
-!#######################################################################
 
 !> @brief Subroutine to add new values to list parameters.
 !!
@@ -2203,7 +1752,7 @@ type (field_def), pointer, save :: temp_p
 !        Initialize the field manager if needed
 !
 if (.not. module_is_initialized) then  !{
-  call initialize
+  call field_manager_init
 endif  !}
 !
 !        Find the list if path is not empty
@@ -2254,7 +1803,7 @@ integer :: out_unit
 !        Initialize the field manager if needed
 !
 if (.not. module_is_initialized) then  !{
-  call initialize
+  call field_manager_init
 endif  !}
 out_unit = stdout()
 !
@@ -2346,7 +1895,7 @@ logical function  fm_dump_list(name, recursive, unit) result (success)
 
   recursive_t = .false.
   if (present(recursive)) recursive_t = recursive
-  if (.not. module_is_initialized) call initialize()
+  if (.not. module_is_initialized) call field_manager_init
 
   if (name .eq. ' ') then
     ! If list is empty, then dump the current list
@@ -2392,7 +1941,7 @@ type (field_def), pointer, save :: dummy_p
 !        Initialize the field manager if needed
 !
 if (.not. module_is_initialized) then  !{
-  call initialize
+  call field_manager_init
 endif  !}
 !
 !        Determine whether the field exists
@@ -2434,7 +1983,7 @@ out_unit = stdout()
 !        Initialize the field manager if needed
 !
 if (.not. module_is_initialized) then  !{
-  call initialize
+  call field_manager_init
 endif  !}
 !
 !        Must supply a field field name
@@ -2487,7 +2036,7 @@ type (field_def), pointer, save :: temp_list_p
 !        Initialize the field manager if needed
 !
 if (.not. module_is_initialized) then  !{
-  call initialize
+  call field_manager_init
 endif  !}
 !
 !        Set a pointer to the current list and proceed
@@ -2561,7 +2110,7 @@ out_unit = stdout()
 !        Initialize the field manager if needed
 !
 if (.not. module_is_initialized) then  !{
-  call initialize
+  call field_manaager_init
 endif  !}
 !
 !        Must supply a field name
@@ -2633,7 +2182,7 @@ out_unit = stdout()
 !        Initialize the field manager if needed
 !
 if (.not. module_is_initialized) then  !{
-  call initialize
+  call field_manager_init
 endif  !}
 !
 !        Must supply a field name
@@ -2699,7 +2248,7 @@ out_unit = stdout()
 !        Initialize the field manager if needed
 !
 if (.not. module_is_initialized) then  !{
-  call initialize
+  call field_manager_init
 endif  !}
 !
 !        Must supply a field field name
@@ -2818,7 +2367,7 @@ out_unit = stdout()
 !        Initialize the field manager if needed
 !
 if (.not. module_is_initialized) then  !{
-  call initialize
+  call field_manager_init
 endif  !}
 !
 !        Must supply a field field name
@@ -2940,7 +2489,7 @@ out_unit = stdout()
 !        Initialize the field manager if needed
 !
 if (.not. module_is_initialized) then  !{
-  call initialize
+  call field_manager_init
 endif  !}
 !
 !        Must supply a field field name
@@ -3065,7 +2614,7 @@ out_unit = stdout()
 !        Initialize the field manager if needed
 !
 if (.not. module_is_initialized) then  !{
-  call initialize
+  call field_manager_init
 endif  !}
 !
 !        Must supply a field field name
@@ -3208,7 +2757,7 @@ nullify(return_p)
 !        Initialize the field manager if needed
 !
 if (.not. module_is_initialized) then  !{
-  call initialize
+  call field_manager_init
 endif  !}
 !
 !        return error if dimension if bad
@@ -3371,7 +2920,7 @@ out_unit = stdout()
 !        Initialize the field manager if needed
 !
 if (.not. module_is_initialized) then  !{
-  call initialize
+  call field_manager_init
 endif  !}
 
 if (list .eq. loop_list .and. associated(loop_list_p)) then  !{
@@ -3453,7 +3002,7 @@ subroutine fm_init_loop(loop_list, iter)
   character(len=*)       , intent(in)  :: loop_list !< name of the list to iterate over
   type(fm_list_iter_type), intent(out) :: iter     !< loop iterator
 
-  if (.not.module_is_initialized) call initialize
+  if (.not.module_is_initialized) call field_manager_init
 
   if (loop_list==' ') then ! looping over current list
      iter%ptr => current_list_p%first_field
@@ -3474,7 +3023,7 @@ function fm_loop_over_list_new(iter, name, field_type, index) &
   character(len=*), intent(out) :: field_type !< type of the field
   integer         , intent(out) :: index      !< index in the list
 
-  if (.not.module_is_initialized) call initialize
+  if (.not.module_is_initialized) call field_manager_init
   if (associated(iter%ptr)) then
      name       = iter%ptr%name
      field_type = field_type_name(iter%ptr%field_type)
@@ -3525,7 +3074,7 @@ out_unit = stdout()
 !        Initialize the field manager if needed
 !
 if (.not. module_is_initialized) then  !{
-  call initialize
+  call field_manager_init
 endif  !}
 !
 !        Must supply a field list name
@@ -3641,7 +3190,7 @@ out_unit = stdout()
 !        Initialize the field manager if needed
 !
 if (.not. module_is_initialized) then  !{
-  call initialize
+  call field_manager_init
 endif  !}
 !
 !        Must supply a field name
@@ -3877,7 +3426,7 @@ out_unit = stdout()
 !        Initialize the field manager if needed
 !
 if (.not. module_is_initialized) then  !{
-  call initialize
+  call field_manager_init
 endif  !}
 !
 !        Must supply a field name
@@ -4114,7 +3663,7 @@ out_unit = stdout()
 !        Initialize the field manager if needed
 !
 if (.not. module_is_initialized) then  !{
-  call initialize
+  call field_manager_init
 endif  !}
 !
 !        Must supply a field name
@@ -4349,7 +3898,7 @@ out_unit = stdout()
 !        Initialize the field manager if needed
 !
 if (.not. module_is_initialized) then  !{
-  call initialize
+  call field_manager_init
 endif  !}
 !
 !        Must supply a field name
@@ -4560,7 +4109,7 @@ subroutine  fm_reset_loop
 !        Initialize the field manager if needed
 !
 if (.not. module_is_initialized) then  !{
-  call initialize
+  call field_manager_init
 endif  !}
 !
 !        Reset the variables
@@ -4590,7 +4139,7 @@ subroutine  fm_return_root  !{
 !        Initialize the field manager if needed
 !
 if (.not. module_is_initialized) then  !{
-  call initialize
+  call field_manager_init
 endif  !}
 !
 !        restore the saved values to the current root
@@ -4705,9 +4254,9 @@ end function fm_modify_name  !}
 !#######################################################################
 !#######################################################################
 
-!> A function to initialize the values of the pointers. This will remove
+!> A subroutine to initialize the values of the pointers. This will remove
 !! all fields and reset the field tree to only the root field.
-subroutine initialize  !{
+subroutine reset_field_tree  !{
 !
 !        arguments
 !
@@ -4718,7 +4267,6 @@ integer :: ier
 !
 !        Initialize the root field
 !
-if (.not. module_is_initialized) then  !{
   root_p => root
 
   field_type_name(integer_type) = 'integer'
@@ -4754,11 +4302,7 @@ if (.not. module_is_initialized) then  !{
   nullify(save_root_parent_p)
   save_root_name = ' '
 
-  module_is_initialized = .true.
-
-endif  !}
-
-end subroutine initialize  !}
+end subroutine reset_field_tree  !}
 
 !#######################################################################
 !#######################################################################
@@ -4874,7 +4418,7 @@ integer                         :: out_unit
 !
 !        Initialize the field manager if needed
 !
-if (.not. module_is_initialized) call initialize
+if (.not. module_is_initialized) call field_manager_init
 name_loc = lowercase(name)
 call find_base(name_loc, path, base)
 
@@ -5086,7 +4630,7 @@ list_name_new = trim(list_name)//trim(suffix)
 !        Initialize the field manager if needed
 !
 if (.not. module_is_initialized) then  !{
-  call initialize
+  call field_manager_init
 endif  !}
 
 if (list_name .eq. ' ') then  !{
@@ -5204,7 +4748,7 @@ num_meth= 1
 !        Initialize the field manager if needed
 !
 if (.not. module_is_initialized) then  !{
-  call initialize
+  call field_manager_init
 endif  !}
 
 if (list_name .eq. ' ') then  !{
