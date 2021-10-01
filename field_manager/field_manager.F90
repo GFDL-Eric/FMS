@@ -179,8 +179,6 @@ module field_manager_mod
 ! <REVIEWER EMAIL="John.Dunne@noaa.gov"> John P. Dunne
 ! </REVIEWER>
 !
-! <HISTORY
-!  SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/shared/field_manager/field_manager.F90"/>
 
 use    mpp_mod, only : mpp_error,   &
                        FATAL,       &
@@ -197,8 +195,6 @@ use fms2_io_mod, only: file_exists
 implicit none
 private
 
-! Include variable "version" to be written to log file.
-#include<file_version.h>
 logical            :: module_is_initialized  = .false.
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -248,7 +244,6 @@ public :: fm_query_method      !< (name, method_name, method_control) return suc
 public :: fm_find_methods      !< (list, methods, control) return success and name and
                                !! control strings.
 public :: fm_copy_list         !< (list, suffix, [create]) return index
-public :: fm_set_verbosity     !< ([verbosity])
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !   Private routines
@@ -553,14 +548,6 @@ type(field_mgr_type), private :: fields(MAX_FIELDS)
 character(len=fm_path_name_len)  :: loop_list
 character(len=fm_type_name_len)  :: field_type_name(num_types)
 character(len=fm_field_name_len) :: save_root_name
-! The string set is the set of characters.
-character(len=52)                :: set = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-! If a character in the string being parsed matches a character within
-! the string set_nonexp then the string being parsed cannot be a number.
-character(len=50)                :: set_nonexp = "ABCDFGHIJKLMNOPQRSTUVWXYZabcdfghijklmnopqrstuvwxyz"
-! If a character in the string being parsed matches a character within
-! the string setnum then the string may be a number.
-character(len=13)                :: setnum     = "0123456789+-."
 integer                          :: num_fields         = 0
 integer                          :: verb               = 0
 integer                          :: verb_level_warn    = 0
@@ -595,302 +582,24 @@ module_is_initialized = .true.
 
 end subroutine field_manager_init
 
-!> @brief Subroutine to add new values to list parameters.
-!!
-!> This subroutine uses input strings list_name, method_name
-!! and val_name_in to add new values to the list. Given
-!! list_name a new list item is created that is named
-!! method_name and is given the value or values in
-!! val_name_in. If there is more than 1 value in
-!! val_name_in, these values should be  comma-separated.
-subroutine new_name ( list_name, method_name_in , val_name_in)
-character(len=*), intent(in)    :: list_name !< The name of the field that is of interest here.
-character(len=*), intent(in)    :: method_name_in !< The name of the method that values are
-                                                  !! being supplied for.
-character(len=*), intent(inout) :: val_name_in !< The value or values that will be parsed and
-                                               !! used as the value when creating a new field or fields.
-
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=8),  parameter :: sub_name     = 'new_name'
-character(len=64), parameter :: error_header = '==>Error from ' // trim(module_name)   //  &
-                                               '(' // trim(sub_name) // '): '
-character(len=64), parameter :: warn_header  = '==>Warning from ' // trim(module_name) //  &
-                                               '(' // trim(sub_name) // '): '
-character(len=64), parameter :: note_header  = '==>Note from ' // trim(module_name)    //  &
-                                               '(' // trim(sub_name) // '): '
-
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=fm_string_len)   :: method_name
-character(len=fm_string_len)   :: val_list
-character(len=fm_string_len)   :: val_name
-integer, dimension(MAX_FIELDS) :: end_val
-integer, dimension(MAX_FIELDS) :: start_val
-integer                        :: i
-integer                        :: index_t
-integer                        :: left_br
-integer                        :: num_elem
-integer                        :: out_unit
-integer                        :: right_br
-integer                        :: val_int
-integer                        :: val_type
-logical                        :: append_new
-logical                        :: val_logic
-real                           :: val_real
-integer                        :: length
-
-call strip_front_blanks(val_name_in)
-method_name = trim (method_name_in)
-call strip_front_blanks(method_name)
-
-index_t  = 1
-num_elem = 1
-append_new = .false.
-start_val(1) = 1
-end_val(:) = len_trim(val_name_in)
-
-! If the array of values being passed in is a comma delimited list then count
-! the number of elements.
-
-do i = 1, len_trim(val_name_in)
-  if ( val_name_in(i:i) == comma ) then
-    end_val(num_elem) = i-1
-    start_val(num_elem+1) = i+1
-    num_elem = num_elem + 1
-  endif
-enddo
-
-! Check to see if this is an array element of form array[x] = value
-left_br  = scan(method_name,'[')
-right_br = scan(method_name,']')
-if ( num_elem .eq. 1 ) then
-!     <ERROR MSG="Left bracket present without right bracket in method_name" STATUS="FATAL">
-!       When using an array element an unpaired bracket was found.
-!     </ERROR>
-  if ( left_br > 0 .and. right_br == 0 ) &
-    call mpp_error(FATAL, trim(error_header)//"Left bracket present without right bracket in "//trim(method_name))
-!     <ERROR MSG="Right bracket present without left bracket in method_name" STATUS="FATAL">
-!       When using an array element an unpaired bracket was found.
-!     </ERROR>
-  if ( left_br== 0 .and. right_br > 0 ) &
-    call mpp_error(FATAL, trim(error_header)//"Right bracket present without left bracket in "//trim(method_name))
-
-
-  if ( left_br > 0 .and. right_br > 0 ) then
-!     <ERROR MSG="Using a non-numeric value for index in method_name" STATUS="FATAL">
-!       An array assignment was requested but a non-numeric value was found. i.e. array[a] = 1
-!     </ERROR>
-    if ( scan( method_name(left_br+1:right_br -1), set ) > 0 ) &
-       call mpp_error(FATAL, trim(error_header)//"Using a non-numeric value for index in "//trim(method_name))
-    read(method_name(left_br+1:right_br -1), *) index_t
-    method_name = method_name(:left_br -1)
-  endif
-else
-! If there are multiple values then there cannot be a bracket in method_name.
-!     <ERROR MSG="Using a comma delimited list with an indexed array element in method_name" STATUS="FATAL">
-!       When supplying multiple values an index was found. i.e array[3] = 4,5,6 is invalid.
-!     </ERROR>
-  if ( left_br > 0 .or. right_br > 0 ) &
-    call mpp_error(FATAL, &
-      trim(error_header)//"Using a comma delimited list with an indexed array element in "//trim(method_name))
-
-endif
-
-do i = 1, num_elem
-
-  if ( i .gt. 1 .or. index_t .eq. 0 ) then
-    append_new = .true.
-    index_t = 0 ! If append is true then index must be <= 0
-  endif
-  val_type = string_type  ! Assume it is a string
-  val_name = val_name_in(start_val(i):end_val(i))
-  call strip_front_blanks(val_name)
-
-
-!
-!       if the string starts and ends with matching single quotes, then this is a string
-!       if there are quotes which do not match, then this is an error
-!
-
-  length = len_trim(val_name)
-  if (val_name(1:1) .eq. squote) then  !{
-
-    if (val_name(length:length) .eq. squote) then
-      val_name = val_name(2:length-1)//repeat(" ",len(val_name)-length+2)
-      val_type = string_type
-    elseif (val_name(length:length) .eq. dquote) then
-      call mpp_error(FATAL, trim(error_header) // ' Quotes do not match in ' // trim(val_name) //       &
-           ' for ' // trim(method_name) // ' of ' // trim(list_name))
-    else
-      call mpp_error(FATAL, trim(error_header) // ' No trailing quote in ' // trim(val_name) //         &
-           ' for ' // trim(method_name) // ' of ' // trim(list_name))
-    endif
-
-  elseif (val_name(1:1) .eq. dquote .or. val_name(length:length) .eq. dquote) then  !}{
-
-    call mpp_error(FATAL, trim(error_header) // ' Double quotes not allowed in ' // trim(val_name) //   &
-         ' for ' // trim(method_name) // ' of ' // trim(list_name))
-
-  elseif (val_name(length:length) .eq. squote) then  !}{
-
-    call mpp_error(FATAL, trim(error_header) // ' No leading quote in ' // trim(val_name) //            &
-         ' for ' // trim(method_name) // ' of ' // trim(list_name))
-
-  else  !}{
-! If the string to be parsed is a real then all the characters must be numeric,
-! be a plus/minus, be a decimal point or, for exponentials, be e or E.
-
-! If a string is an integer, then all the characters must be numeric.
-
-  if ( scan(val_name(1:1), setnum ) > 0 ) then
-
-! If there is a letter in the name it may only be e or E
-
-      if ( scan(val_name, set_nonexp ) > 0 ) then
-        if (verb .gt. verb_level_warn) then
-!     <ERROR MSG="First character of value is numerical but the value does not appear to be numerical." STATUS="WARNING">
-!       The value may not be numerical. This is a warning as the user may wish to use a value of 2nd_order.
-!     </ERROR>
-          call mpp_error(WARNING, trim(warn_header)//                                  &
-               'First character of value is numerical but the value does not appear to be numerical.')
-          call mpp_error(WARNING, 'Name = '// trim(list_name)// list_sep//                &
-               trim(method_name)// ' Value = '// trim(val_name))
-        endif
-
-      else
-! It is real if there is a . in the name or the value appears exponential
-        if ( scan(val_name, '.') > 0 .or. scan(val_name, 'e') > 0 .or. scan(val_name, 'E') > 0) then
-          read(val_name, *) val_real
-          val_type = real_type
-        else
-          read(val_name, *) val_int
-          val_type = integer_type
-        endif
-      endif
-
-    endif
-
-! If val_name is t/T or f/F then this is a logical flag.
-    if ( len_trim(val_name) == 1 .or. len_trim(val_name) == 3) then
-       if ( val_name == 't' .or. val_name == 'T' .or. val_name == '.t.' .or. val_name == '.T.' ) then
-         val_logic = .TRUE.
-         val_type = logical_type
-       endif
-       if ( val_name == 'f' .or. val_name == 'F' .or. val_name == '.f.' .or. val_name == '.F.' ) then
-         val_logic = .FALSE.
-         val_type = logical_type
-       endif
-    endif
-    if ( trim(lowercase(val_name)) == 'true' .or. trim(lowercase(val_name)) == '.true.' ) then
-      val_logic = .TRUE.
-      val_type = logical_type
-    endif
-    if ( trim(lowercase(val_name)) == 'false' .or. trim(lowercase(val_name)) == '.false.' ) then
-      val_logic = .FALSE.
-      val_type = logical_type
-    endif
-  endif  !}
-
-  select case(val_type)
-
-    case (integer_type)
-      if ( fm_new_value( method_name, val_int, create = .true., index = index_t, append = append_new ) < 0 ) &
-        call mpp_error(FATAL, trim(error_header)//'Could not set "' // trim(val_name) // '" for '//trim(method_name)//&
-                              ' (I) for '//trim(list_name))
-
-    case (logical_type)
-      if ( fm_new_value( method_name, val_logic, create = .true., index = index_t, append = append_new) < 0 ) &
-        call mpp_error(FATAL, trim(error_header)//'Could not set "' // trim(val_name) // '" for '//trim(method_name)//&
-                              ' (L) for '//trim(list_name))
-
-    case (real_type)
-      if ( fm_new_value( method_name, val_real, create = .true., index = index_t, append = append_new) < 0 ) &
-        call mpp_error(FATAL, trim(error_header)//'Could not set "' // trim(val_name) // '" for '//trim(method_name)//&
-                              ' (R) for '//trim(list_name))
-
-    case (string_type)
-      if ( fm_new_value( method_name, val_name, create = .true., index = index_t, append = append_new) < 0 ) &
-        call mpp_error(FATAL, trim(error_header)//'Could not set "' // trim(val_name) // '" for '//trim(method_name)//&
-                              ' (S) for '//trim(list_name))
-    case default
-      call mpp_error(FATAL, trim(error_header)//'Could not find a valid type to set the '//trim(method_name)//&
-                            ' for '//trim(list_name))
-
-  end select
-
-  if (mpp_pe() == mpp_root_pe() ) then
-    if (verb .gt. verb_level_note) then
-      out_unit = stdout()
-      write (out_unit,*) trim(note_header), 'Creating new value = ', trim(method_name), ' ', trim(val_name)
-    endif
-  endif
-
-enddo
-
-end subroutine new_name
-
-!#######################################################################
-!#######################################################################
-
 !> @brief Destructor for field manager.
 !!
-!> This subroutine writes to the logfile that the user is exiting field_manager and
-!! changes the initialized flag to false.
+!> This subroutine changes the initialized flag to false.
 subroutine field_manager_end
-
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-character(len=17), parameter :: sub_name     = 'field_manager_end'
-character(len=64), parameter :: note_header  = '==>Note from ' // trim(module_name)    //  &
-                                               '(' // trim(sub_name) // '): '
-
-integer :: unit
-
-call write_version_number("FIELD_MANAGER_MOD", version)
-if ( mpp_pe() == mpp_root_pe() ) then
-   unit = stdlog()
-   write (unit,'(/,(a))') trim(note_header), 'Exiting field_manager, have a nice day ...'
-   unit = stdout()
-   write (unit,'(/,(a))') trim(note_header), 'Exiting field_manager, have a nice day ...'
-endif
 
 module_is_initialized = .false.
 
 end subroutine field_manager_end
 
-!#######################################################################
-!#######################################################################
-
 !> @brief A routine to strip whitespace from the start of character strings.
 !!
-!> This subroutine removes spaces and tabs from the start of a character string.
-subroutine strip_front_blanks(name)
+!> This subroutine removes spaces from the start of a character string.
+subroutine strip_front_blanks(text)
 
-character(len=*), intent(inout) :: name !< name to remove whitespace from
+character(len=*), intent(in) :: text !< name to remove whitespace from
 
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-integer :: i, j
-
-j = 1
-do i = 1,len_trim(name) !{
-   if ( .not. (name(i:i) .eq. space .or.                        &
-               name(i:i) .eq. tab)) then  !{
-    j = i
-    exit
-  endif !}
-enddo !}
-name = name(j:)
-end subroutine strip_front_blanks
-
-!#######################################################################
-!#######################################################################
+text = trim(adjustl(text))
+subroutine strip_front_blanks
 
 !> @brief Function to return the index of the field
 !!
@@ -4912,63 +4621,6 @@ else  !}{
 endif  !}
 
 end function find_method !}
-
-!> A subroutine to set the verbosity of the field manager output.
-!!
-!> This subroutine will set the level of verbosity in the module.
-!! Currently, verbosity is either on (1) or off (0). However,
-!! in the future, "on" may have more granularity. If no argument
-!! is given, then, if verbosity is on it will be turned off, and
-!! is off, will be turned to the default on level.
-!! If verbosity is negative then it is turned off.
-!! Values greater than the maximum will be set to the maximum.
-subroutine  fm_set_verbosity(verbosity)  !{
-integer, intent(in), optional :: verbosity !< The level of verbosity required by user
-
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!       local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-character(len=16), parameter :: sub_name     = 'fm_set_verbosity'
-character(len=64), parameter :: note_header  = '==>Note from ' // trim(module_name)    //  &
-                                               '(' // trim(sub_name) // '): '
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local variables
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-integer                         :: out_unit
-
-out_unit = stdout()
-
-!
-!       Check whether an argument has been given
-!
-
-if (present(verbosity)) then  !{
-
-  if (verbosity .le. 0) then  !{
-    verb = 0
-  elseif (verbosity .ge. max_verbosity) then  !}{
-    verb = max_verbosity
-  else  !}{
-    verb = verbosity
-  endif  !}
-
-else  !}{
-
-  if (verb .eq. 0) then  !{
-    verb = default_verbosity
-  else  !}{
-    verb = 0
-  endif  !}
-
-endif  !}
-
-write (out_unit,*)
-write (out_unit,*) trim(note_header),                          &
-     'Verbosity now at level ', verb
-write (out_unit,*)
-
-end subroutine  fm_set_verbosity  !}
 
 end module field_manager_mod
 !> @}
