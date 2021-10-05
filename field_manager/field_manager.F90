@@ -203,9 +203,6 @@ logical            :: module_is_initialized  = .false.
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 public :: field_manager_init   !< (nfields, [table_name]) returns number of fields
 public :: field_manager_end    !< ()
-public :: find_field_index     !< (model, field_name) or (list_path)
-public :: find_field_index_old !< (model, field_name) returns index of field_name in
-public :: find_field_index_new
 public :: get_field_info       !< (n,fld_type,fld_name,model,num_methods)
                                !! Returns parameters relating to field n.
 public :: get_field_method     !< (n, m, method) Returns the m-th method of field n
@@ -362,20 +359,6 @@ type(method_type), public :: default_method
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        Interface definitions for overloaded routines
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-!> @brief Returns an index corresponding to the given field name.
-!!
-!> Model number can be given for old method.
-!! <br>Example usage:
-!! @code{.F90}
-!! value=find_field_index( model, field_name )
-!! value=find_field_index( field_name )
-!! @endcode
-!> @ingroup field_manager_mod
-interface find_field_index
-  module procedure  find_field_index_old
-  module procedure  find_field_index_new
-end interface
 
 !> @brief A function to parse an integer or an array of integers,
 !! a real or an array of reals, a string or an array of strings.
@@ -556,15 +539,19 @@ contains
 !! needed within various modules. The field manager does not
 !! initialize any of those schemes however. It simply holds the
 !! information and is queried by the appropriate  module.
-subroutine field_manager_init()
+subroutine field_manager_init(nfields)
+
+integer, intent(out), optional :: nfields
 
 if (module_is_initialized) then
+   nfields = num_fields
    return
 endif
 
 call reset_field_tree
 call get_fields_from_yaml
-
+num_fields = get_num_fields()
+nfields = num_fields
 module_is_initialized = .true.
 
 end subroutine field_manager_init
@@ -586,56 +573,7 @@ subroutine strip_front_blanks(text)
 character(len=*), intent(in) :: text !< name to remove whitespace from
 
 text = trim(adjustl(text))
-subroutine strip_front_blanks
-
-!> @brief Function to return the index of the field
-!!
-!> This function when passed a model number and a field name will
-!! return the index of the field within the field manager. This index
-!! can be used to access other information from the field manager.
-!! @returns The index of the field corresponding to field_name.
-function find_field_index_old(model, field_name)
-
-integer                      :: find_field_index_old
-integer,          intent(in) :: model !< The number indicating which model is used.
-character(len=*), intent(in) :: field_name !< The name of the field that an index is being requested for.
-
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-integer :: i
-
-find_field_index_old = NO_FIELD
-
-do i=1,num_fields
-   if (fields(i)%model == model .and. fields(i)%field_name == lowercase(field_name)) then
-      find_field_index_old = i
-      return
-   endif
-enddo
-
-end function find_field_index_old
-
-!> @returns index of the field corresponding to field_name
-function find_field_index_new(field_name)
-
-integer                      :: find_field_index_new
-character(len=*), intent(in) :: field_name !< The path to the name of the field that an index is
-                             !! being requested for.
-
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-!        local parameters
-!+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-integer :: i
-
-find_field_index_new = NO_FIELD
-
-find_field_index_new = fm_get_index(field_name)
-
-end function find_field_index_new
-
-!#######################################################################
-!#######################################################################
+end subroutine strip_front_blanks
 
 !> @brief This routine allows access to field information given an index.
 !!
@@ -660,10 +598,6 @@ character(len=14), parameter :: sub_name     = 'get_field_info'
 character(len=64), parameter :: error_header = '==>Error from ' // trim(module_name)   //  &
                                                '(' // trim(sub_name) // '): '
 
-!   <ERROR MSG="invalid field index" STATUS="FATAL">
-!     The field index is invalid because it is less than 1 or greater than the
-!     number of fields.
-!   </ERROR>
 if (n < 1 .or. n > num_fields) call mpp_error(FATAL,trim(error_header)//'Invalid field index')
 
 fld_type    = fields(n)%field_type
