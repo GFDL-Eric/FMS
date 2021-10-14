@@ -62,7 +62,7 @@ use mpp_domains_mod, only : domainUG, mpp_pass_SG_to_UG, mpp_get_UG_SG_domain, N
 use time_manager_mod, only: time_type
 use fms2_io_mod,     only : FmsNetcdfFile_t, open_file, close_file, &
                             read_data, fms2_io_init, variable_exists, &
-                            get_mosaic_tile_file
+                            get_mosaic_tile_file, get_variable_num_dimensions
 use get_grid_version_mod, only: get_grid_version_1, get_grid_version_2
 
 implicit none
@@ -761,6 +761,14 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
         allocate(override_array(curr_position)%lon_in(axis_sizes(1)+1))
         allocate(override_array(curr_position)%lat_in(axis_sizes(2)+1))
         if(get_external_fileobj(filename, fileobj)) then
+           if (.not. variable_exists(fileobj, axis_names(1)) &
+               call mpp_error(FATAL,'data_override: the axis '//trim(axis_names(1))//' is not defined as a variable in '//trim(filename))
+           if (.not. variable_exists(fileobj, axis_names(2)) &
+               call mpp_error(FATAL,'data_override: the axis '//trim(axis_names(2))//' is not defined as a variable in '//trim(filename))
+           if (get_variable_num_dimensions(fileobj, axis_names(1)) .gt. 1) &
+               call mpp_error(FATAL,'data_override: the axis '//trim(axis_names(1))//' contains more than one dimension. Data_override only supports ingestion from one dimensional axes')
+           if (get_variable_num_dimensions(fileobj, axis_names(2)) .gt. 1) &
+               call mpp_error(FATAL,'data_override: the axis '//trim(axis_names(2))//' contains more than one dimension. Data_override only supports ingestion from one dimensional axes')
            call axis_edges(fileobj, axis_names(1), override_array(curr_position)%lon_in, &
               reproduce_null_char_bug_flag=reproduce_null_char_bug)
            call axis_edges(fileobj, axis_names(2), override_array(curr_position)%lat_in, &
