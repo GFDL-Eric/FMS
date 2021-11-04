@@ -110,10 +110,6 @@ libmpp_la_SOURCES = \
   include/mpp_util.inc \
   include/mpp_util_mpi.inc \
   include/mpp_util_nocomm.inc \
-  include/mpp_write.h \
-  include/mpp_write_2Ddecomp.h \
-  include/mpp_write_compressed.h \
-  include/mpp_write_unlimited_axis.h \
   include/system_clock.h
 
 mpp_mod.$(FC_MODEXT): \
