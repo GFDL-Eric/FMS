@@ -36,7 +36,6 @@ libmpp_la_SOURCES = \
   mpp_data.F90 \
   mpp_utilities.F90 \
   mpp_domains.F90 \
-  mpp_io.F90 \
   mpp_efp.F90 \
   mpp_memutils.F90 \
   mpp_memuse.c \
@@ -88,13 +87,6 @@ libmpp_la_SOURCES = \
   include/mpp_global_sum_ad.h \
   include/mpp_global_sum_tl.h \
   include/mpp_group_update.h \
-  include/mpp_io_connect.inc \
-  include/mpp_io_misc.inc \
-  include/mpp_io_read.inc \
-  include/mpp_io_unstructured_read.inc \
-  include/mpp_io_unstructured_write.inc \
-  include/mpp_io_util.inc \
-  include/mpp_io_write.inc \
   include/mpp_read_2Ddecomp.h \
   include/mpp_read_compressed.h \
   include/mpp_read_distributed_ascii.h \

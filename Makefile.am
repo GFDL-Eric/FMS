@@ -43,7 +43,6 @@ SUBDIRS = \
   mosaic2 \
   fms \
   affinity \
-  mosaic \
   time_manager \
   axis_utils \
   diag_manager \
