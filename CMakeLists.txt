@@ -118,7 +118,6 @@ list(APPEND fms_fortran_src_files
   exchange/xgrid.F90
   field_manager/field_manager.F90
   field_manager/fm_util.F90
-  fms/fms_io.F90
   fms/fms.F90
   fms2_io/blackboxio.F90
   fms2_io/fms_io_utils.F90
@@ -137,15 +136,12 @@ list(APPEND fms_fortran_src_files
   monin_obukhov/monin_obukhov_inter.F90
   monin_obukhov/monin_obukhov.F90
   mosaic/gradient.F90
-  mosaic/grid.F90
-  mosaic/mosaic.F90
   mosaic2/grid2.F90
   mosaic2/mosaic2.F90
   mpp/mpp.F90
   mpp/mpp_data.F90
   mpp/mpp_domains.F90
   mpp/mpp_efp.F90
-  mpp/mpp_io.F90
   mpp/mpp_memutils.F90
   mpp/mpp_parameter.F90
   mpp/mpp_utilities.F90
@@ -154,7 +150,6 @@ list(APPEND fms_fortran_src_files
   random_numbers/random_numbers.F90
   sat_vapor_pres/sat_vapor_pres_k.F90
   sat_vapor_pres/sat_vapor_pres.F90
-  time_interp/time_interp_external.F90
   time_interp/time_interp_external2.F90
   time_interp/time_interp.F90
   time_manager/get_cal_time.F90
