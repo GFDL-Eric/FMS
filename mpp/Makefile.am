@@ -87,10 +87,6 @@ libmpp_la_SOURCES = \
   include/mpp_global_sum_ad.h \
   include/mpp_global_sum_tl.h \
   include/mpp_group_update.h \
-  include/mpp_read_2Ddecomp.h \
-  include/mpp_read_compressed.h \
-  include/mpp_read_distributed_ascii.h \
-  include/mpp_read_distributed_ascii.inc \
   include/mpp_reduce_mpi.h \
   include/mpp_reduce_nocomm.h \
   include/mpp_scatter.h \
