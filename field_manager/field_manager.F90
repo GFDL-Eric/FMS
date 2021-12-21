@@ -180,6 +180,7 @@ module field_manager_mod
 ! </REVIEWER>
 !
 
+use yaml_parser_mod
 use    mpp_mod, only : mpp_error,   &
                        FATAL,       &
                        NOTE,        &
@@ -517,7 +518,11 @@ end type field_def
 !        Private types
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
+#ifdef use_yaml
+type(field_mgr_type), dimension(:), allocatable, private :: fields
+#else
 type(field_mgr_type), private :: fields(MAX_FIELDS)
+#endif
 
 !+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 !        Private variables
