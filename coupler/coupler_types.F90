@@ -229,6 +229,8 @@ module coupler_types_mod
   integer, public :: ind_deltap= 2 !< The index for ocean-air gas partial pressure change
   integer, public :: ind_kw = 3    !< The index for the piston velocity
   integer, public :: ind_flux0 = 4 !< The index for the piston velocity
+  integer, public :: ind_out1 = 5 !< The index for output slot 1 ! prustogi-bgr
+  integer, public :: ind_out2 = 6 !< The index for output slot 2 ! prustogi-bgr
   integer, public :: ind_deposition = 1 !< The index for the atmospheric deposition flux
   integer, public :: ind_runoff = 1 !< The index for a runoff flux
   !> @}

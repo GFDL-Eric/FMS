@@ -48,7 +48,7 @@ module  atmos_ocean_fluxes_mod
   use coupler_types_mod, only: ind_pcair, ind_u10, ind_psurf
   use coupler_types_mod, only: ind_deposition
   use coupler_types_mod, only: ind_runoff
-  use coupler_types_mod, only: ind_flux, ind_deltap, ind_kw, ind_flux0
+  use coupler_types_mod, only: ind_flux, ind_deltap, ind_kw, ind_flux0, ind_out1, ind_out2 ! prustogi-bgr
 
   use field_manager_mod, only: fm_path_name_len, fm_string_len, fm_exists, fm_get_index
   use field_manager_mod, only: fm_new_list, fm_get_current_list, fm_change_list
@@ -995,6 +995,15 @@ contains
     call fm_util_set_value('air_sea_gas_flux_generic/atm/long_name', 'Surface atmospheric pressure', index = ind_psurf)
     call fm_util_set_value('air_sea_gas_flux_generic/atm/units', 'Pa', index = ind_psurf)
 
+    !brandon & liao
+    call fm_util_set_value('air_sea_gas_flux_generic/atm/name', 'ustar', index = ind_ustar)
+    call fm_util_set_value('air_sea_gas_flux_generic/atm/long_name', 'Surface atmospheric friction velocity', index = ind_ustar)
+    call fm_util_set_value('air_sea_gas_flux_generic/atm/units', 'm/s', index = ind_ustar)
+
+    call fm_util_set_value('air_sea_gas_flux_generic/atm/name', 'hs', index = ind_hs)
+    call fm_util_set_value('air_sea_gas_flux_generic/atm/long_name', 'Surface wave height', index = ind_hs)
+    call fm_util_set_value('air_sea_gas_flux_generic/atm/units', 'm', index = ind_hs)
+
     ! Add required fields that will come from the ice model.
     if (fm_new_list('air_sea_gas_flux_generic/ice') .le. 0) then
       call mpp_error(FATAL, trim(error_header) // ' Could not set the "air_sea_gas_flux_generic/ice" list')
@@ -1032,6 +1041,16 @@ contains
     call fm_util_set_value('air_sea_gas_flux_generic/flux/name',      'flux0',         index = ind_flux0)
     call fm_util_set_value('air_sea_gas_flux_generic/flux/long_name', 'Surface flux no atm', index = ind_flux0)
     call fm_util_set_value('air_sea_gas_flux_generic/flux/units',     'mol/m^2/s',    index = ind_flux0)
+
+    ! prustogi-bgr
+
+    call fm_util_set_value('air_sea_gas_flux_generic/flux/name',      'u10', index = ind_out1)
+    call fm_util_set_value('air_sea_gas_flux_generic/flux/long_name', '10m neutral wind speed for output', index = ind_out1)
+    call fm_util_set_value('air_sea_gas_flux_generic/flux/units',     'm/s', index = ind_out1)
+
+    call fm_util_set_value('air_sea_gas_flux_generic/flux/name',      'ustar', index = ind_out2)
+    call fm_util_set_value('air_sea_gas_flux_generic/flux/long_name', 'ustar for output', index = ind_out2)
+    call fm_util_set_value('air_sea_gas_flux_generic/flux/units',     'm/s', index = ind_out2)
 
     ! Define the air_sea_gas_flux type and add it.
     if (fm_new_list('air_sea_gas_flux') .le. 0) then
