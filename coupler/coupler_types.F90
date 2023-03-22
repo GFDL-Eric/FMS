@@ -222,6 +222,8 @@ module coupler_types_mod
   integer, public :: ind_pcair = 1 !< The index of the atmospheric concentration
   integer, public :: ind_u10 = 2   !< The index of the 10 m wind speed
   integer, public :: ind_psurf = 3 !< The index of the surface atmospheric pressure
+  integer, public :: ind_ustar = 4 !< The index of the surface atmospheric pressure
+  integer, public :: ind_hs = 5 !< The index of the surface atmospheric pressure
   integer, public :: ind_alpha = 1 !< The index of the solubility array for a tracer
   integer, public :: ind_csurf = 2 !< The index of the ocean surface concentration
   integer, public :: ind_sc_no = 3 !< The index for the Schmidt number for a tracer flux

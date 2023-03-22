@@ -45,7 +45,7 @@ module  atmos_ocean_fluxes_mod
 
   use coupler_types_mod, only: coupler_1d_bc_type
   use coupler_types_mod, only: ind_alpha, ind_csurf, ind_sc_no
-  use coupler_types_mod, only: ind_pcair, ind_u10, ind_psurf
+  use coupler_types_mod, only: ind_pcair, ind_u10, ind_psurf, ind_ustar, ind_hs !brandon & liao
   use coupler_types_mod, only: ind_deposition
   use coupler_types_mod, only: ind_runoff
   use coupler_types_mod, only: ind_flux, ind_deltap, ind_kw, ind_flux0, ind_out1, ind_out2 ! prustogi-bgr
@@ -1003,6 +1003,7 @@ contains
     call fm_util_set_value('air_sea_gas_flux_generic/atm/name', 'hs', index = ind_hs)
     call fm_util_set_value('air_sea_gas_flux_generic/atm/long_name', 'Surface wave height', index = ind_hs)
     call fm_util_set_value('air_sea_gas_flux_generic/atm/units', 'm', index = ind_hs)
+    !brandon & liao
 
     ! Add required fields that will come from the ice model.
     if (fm_new_list('air_sea_gas_flux_generic/ice') .le. 0) then
