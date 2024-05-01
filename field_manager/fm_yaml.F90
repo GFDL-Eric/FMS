@@ -225,8 +225,6 @@ function construct_fmVar_t(in_yfid, in_id) result(this)
 
   this%yfid = in_yfid
   this%id = in_id
-  this%nchildren = get_num_blocks(this%yfid, this%blockname, this%id)
-  allocate(this%child_ids(this%nchildren))
 end function construct_fmVar_t
 
 !> @brief Function to construct the fmAttr_t type.
@@ -236,7 +234,7 @@ end function construct_fmVar_t
 function construct_fmAttr_t(in_yfid, in_id) result(this)
   type (fmAttr_t)      :: this    !< the var object
   integer, intent(in) :: in_yfid !< yaml file id
-  integer, intent(in) :: in_id   !< block_id of var from parent
+  integer, intent(in) :: in_id   !< block_id of Attr from parent
 
   this%yfid = in_yfid
   this%id = in_id
@@ -373,8 +371,32 @@ end subroutine get_name_fmModel_t
 !> @brief gets the block ids for children of this type.
 subroutine get_blocks_fmVar_t(this)
   class (fmVar_t) :: this !< variable object
+  integer         :: var_block_i, id_i
+  integer         :: num_subparams, start_id
+  integer, dimension(size(this%keys)) :: temp_blocks
+  integer, allocatable :: temp_child_ids(:)
 
-  call get_block_ids(this%yfid, this%blockname, this%child_ids, this%id)
+  num_subparams = 0
+  do var_block_i=1,size(this%keys)
+    temp_blocks(var_block_i) = get_num_blocks(this%yfid, this%blockname//'_'//this%keys(var_block_i), this%id)
+    num_subparams = num_subparams + temp_blocks(var_block_i)
+  end do
+  this%nchildren = num_subparams
+  num_subparams = 0
+
+  allocate(this%child_ids(this%nchildren))
+  start_id = 1
+  do var_block_i=1,size(this%keys)
+    if (temp_blocks(var_block_i).le.0) then
+      cycle
+    else
+      allocate(temp_child_ids(temp_blocks(var_block_i)))
+      call get_block_ids(this%yfid, this%blockname//'_'//this%keys(var_block_i), temp_child_ids, this%id)
+      this%child_ids(start_id) = temp_child_ids(1)
+      deallocate(temp_child_ids)
+      start_id = start_id + 1
+    end if
+  end do
 end subroutine get_blocks_fmVar_t
 
 !> @brief Gets the name of this variable as well as the associated parameters and adds them to fmVar_t.
@@ -497,8 +519,8 @@ subroutine create_children_fmModel_t(this)
   allocate(this%children(this%nchildren))
   do model_i=1,this%nchildren
     this%children(model_i) = fmVar_t(this%yfid, this%child_ids(model_i))
-    call this%children(model_i)%get_blocks
     call this%children(model_i)%get_names_and_props
+    call this%children(model_i)%get_blocks
     call this%children(model_i)%create_children
   end do
 end subroutine create_children_fmModel_t
